@@ -1,0 +1,17 @@
+{
+  "name": "frontend-poc-pipeline",
+  "owner": {
+    "name": "bruno-park"
+  },
+  "metadata": {
+    "description": "AI-driven frontend PoC pipeline skills for Figma → PRD → TDD → PR workflow",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "frontend-poc-pipeline",
+      "source": "./plugins/frontend-poc-pipeline",
+      "description": "Full pipeline: figma-jira-prd → branch-from-ticket → screen-plan → test-writer → api-integration → ui-builder → pull-request-description"
+    }
+  ]
+}

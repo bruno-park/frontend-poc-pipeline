@@ -1,0 +1,11 @@
+{
+  "name": "frontend-poc-pipeline",
+  "description": "AI-driven frontend PoC pipeline: Figma → PRD → Branch → Screen Plan → TDD → Implementation → PR",
+  "version": "0.1.0",
+  "author": {
+    "name": "bruno-park"
+  },
+  "repository": "https://github.com/bruno-park/frontend-poc-pipeline",
+  "license": "MIT",
+  "keywords": ["figma", "jira", "tdd", "react", "playwright", "poc", "pipeline"]
+}
