@@ -13,9 +13,17 @@ Analyzes a Figma design or screenshots, plans component structure, determines wh
 
 - `$1` - **Figma URL** (optional): Full Figma design URL with node-id
 - `$2, $3, ...` - **Image paths** (optional): Design screenshot file paths
+- **Jira issue key** (optional, any position): e.g. `AX-70`, `WP-1234` — When provided, fetches PRD from Jira and extracts **Implementation Hints (Section 7)** to enrich the plan automatically
 - Last argument - **Optional context**: Additional requirements if provided
 
 **Note**: Provide either Figma URL or image paths (or both)
+
+**Examples**:
+```bash
+/planner "https://figma.com/design/abc?node-id=123-456"
+/planner "https://figma.com/design/abc?node-id=123-456" AX-70
+/planner AX-70 "/path/to/design.png"
+```
 
 ## Output File Rules
 
@@ -28,23 +36,54 @@ Analyzes a Figma design or screenshots, plans component structure, determines wh
 
 ---
 
-## Phase 1: Design Analysis
+## Phase 1: Design Analysis + PRD Context Loading
 
-**Check arguments to determine design sources:**
+**Step 1A: Parse all arguments in parallel**
 
-**If Figma URL is provided ($1 starts with http):**
-1. Extract node ID from Figma URL ($1)
-2. Use Figma MCP tools to gather:
+Parse ALL arguments to identify:
+- Figma URL(s): any arg starting with `http` and containing `figma.com`
+- Image paths: any arg that is a local file path
+- Jira issue key: any arg matching `[A-Z]+-\d+` pattern (e.g. `AX-70`, `WP-1234`)
+- Optional context: last non-URL, non-key, non-path argument
+
+**Step 1B: Load PRD context from Jira (if issue key provided)**
+
+If a Jira issue key is found:
+1. Determine Jira MCP tool:
+   - `wisebirds.atlassian.net` → `mcp__mcp-atlassian-nestads__jira_get_issue`
+   - `heypoll.atlassian.net` → `mcp__mcp-atlassian-heypoll__jira_get_issue`
+2. Fetch the issue: `fields: summary, description`
+3. Extract **Section 7 — Implementation Hints** from the PRD description:
+   - Page type flags: `hasCreate`, `hasList`, `hasDetail`, `isReadOnly`
+   - Feature directory: `suggested-name`
+   - URL State: `Needed: Yes/No` + parameters
+   - Cancel behavior: page → action + modal
+   - Empty/Loading/Error states
+   - API Hints: endpoint, method, purpose
+4. If Section 7 not found, extract what's available from description (User Stories, State Conditions, Field Definitions)
+5. Store as `prd_context` — used to enrich Phase 2–6
+
+**Step 1C: Load spec-validator policy context**
+
+Call `spec-validator guide` to load [F]/[P]/[Data] tag policy context.
+Store as `spec_policy` — used in Phase 2 when analyzing Figma description nodes.
+
+**Step 1D: Analyze design sources**
+
+**If Figma URL is provided:**
+1. Extract node ID from Figma URL
+2. Use Figma MCP tools to gather (**run in parallel with Step 1B**):
    - `get_metadata` - Component structure and hierarchy
    - `get_screenshot` - Visual reference
    - `get_code` - Design tokens, spacing, colors, typography
-3. Analyze the Figma design:
+3. Analyze the Figma design using `spec_policy` context:
    - Identify visual hierarchy from metadata
    - Note interactive elements and component structure
    - Extract design tokens (spacing, colors, typography)
    - Map component relationships
+   - **Validate any description nodes against [F]/[P]/[Data] policy**
 
-**If image file paths are provided ($2, $3, etc.):**
+**If image file paths are provided:**
 1. **Read design screenshots** from arguments:
    - Use the Read tool to view each screenshot image
    - Analyze multiple screens if provided (e.g., different states, responsive views)
@@ -56,6 +95,16 @@ Analyzes a Figma design or screenshots, plans component structure, determines wh
    - Identify different states (loading, error, empty, success)
    - Map data flow (what comes from API, what's static)
    - Note responsive behavior if multiple viewports shown
+
+**Step 1E: Merge PRD context with design analysis**
+
+If `prd_context` exists, merge it with design analysis:
+- Use `hasCreate/hasList/hasDetail` flags to determine page structure
+- Use `suggested-name` as the feature directory name (override design-inferred name if provided)
+- Use `cancel behavior` to add cancel button component specs
+- Use `API Hints` to pre-populate hook layer planning
+- Use `Empty/Loading/Error states` to add state UI components
+- Use User Story ACs as additional component behavior constraints
 
 ---
 
@@ -269,6 +318,14 @@ For each component, document:
 8. **Data Fetching**: React Query hooks (fetch in component that uses data)
 9. **Children Components**: List of sub-components
 10. **Styling Notes**: Tailwind classes to use
+11. **Conditional Rendering**: IF/THEN rules from PRD State Conditions (if `prd_context` available)
+    - Example: `IF ADBADGE remote free THEN disable AdBadge field`
+12. **UI States**: Document all required states explicitly
+    - `Loading`: skeleton / spinner / disabled (specify which)
+    - `Empty`: empty state message or N/A for non-list components
+    - `Error`: toast / inline error / error page (specify which)
+13. **Cancel Behavior** (form/modal components only): From `prd_context` cancel behavior
+    - Example: `딤드 + 확인 모달 → 목록 이동` or `즉시 목록 이동`
 
 ### Example Output Format
 
@@ -671,6 +728,35 @@ export const getFeature = async (id: string) => { ... }
 
 ---
 
+### File/Media Upload Component Pattern
+
+When a field has type `VIDEO`, `IMAGE`, or `FILE` (from PRD field definition or design analysis):
+
+```markdown
+## Component: [Feature]MediaUpload
+
+**Path**: `pageComponents/[feature]/components/[section]/[Feature]MediaUpload.tsx`
+**Memo**: No — receives onChange callback, re-renders on upload state change
+**Purpose**: File/media upload with preview
+
+**Props**: `{ value?: string; onChange: (url: string) => void; accept: string }`
+
+**State**:
+- `uploadStatus` (useState<'idle' | 'uploading' | 'done' | 'error'>)
+
+**Upload Method**: [multipart/form-data | pre-signed URL | direct URL input | TBD]
+- Note: Upload method must be specified from PRD API Hints or marked [TBD]
+
+**UI States**:
+- Loading: progress indicator during upload
+- Error: inline error message below field
+- Done: preview thumbnail
+
+**Data Fetching**: upload mutation hook (POST to upload endpoint)
+```
+
+> If upload method is `[TBD]` in PRD, add a comment in the component plan and Implementation Checklist Step 2.
+
 ### DO:
 
 - **Use shadcn/ui first**, then rsuite if needed (from `./components/ui/`)
@@ -720,7 +806,52 @@ After completing all phases, **save the plan to a file**:
    - Component Details Table (name, path, memo, props, state, data fetching, purpose)
    - Data Flow Diagram (React Query hooks → Components)
    - URL State (schema with keys/types/defaults/triggers, or "Not needed" with reason)
-   - Implementation Checklist (ordered steps for coding)
+   - PRD Context Summary (if Jira issue key was provided)
+   - Implementation Checklist (ordered steps for coding — see template below)
+
+### Implementation Checklist Template
+
+Include this ordered checklist in every planner.md output:
+
+```markdown
+## Implementation Checklist
+
+### Step 1: Types & Constants
+- [ ] Define API request/response types in query hook file
+- [ ] Define component-specific types in `[section].types.ts` (only if needed)
+- [ ] Define constants/enums in `[section].constants.ts` (only if needed)
+
+### Step 2: API Hooks
+- [ ] Implement `use[Feature]Query.hook.ts` (pure fetch layer)
+- [ ] Implement `use[Feature].hook.ts` (wrapper: mutations + data transform) — only if needed
+
+### Step 3: Page Entry Points
+- [ ] Create `pages/[route].tsx` with minimal layout
+- [ ] Wire Section component as the only child
+
+### Step 4: Form Schema (hasCreate || hasDetail)
+- [ ] Define Zod schema in `form/schema/[feature]-form.schema.ts`
+- [ ] Map all [E] fields from PRD field definition table
+- [ ] Add validation rules matching PRD RULE-XX entries
+
+### Step 5: Section Components (top-down)
+- [ ] Implement root Section component (FormProvider if form page)
+- [ ] Implement sub-sections in order: [list section names from design]
+- [ ] Add conditional rendering per IF/THEN rules
+
+### Step 6: UI States
+- [ ] Add loading state to data-fetching components
+- [ ] Add empty state to list/table components
+- [ ] Add error handling (toast or inline per PRD spec)
+
+### Step 7: Cancel & Post-Save Flow
+- [ ] Implement cancel button behavior (modal / direct navigate per PRD)
+- [ ] Implement post-save navigation (per PRD Section 4-5)
+
+### Step 8: URL State (if needed)
+- [ ] Implement URL state schema with `useUrlState`
+- [ ] Wire filter/search/pagination components to URL state
+```
 
 ### After saving, inform the user:
 
