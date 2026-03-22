@@ -57,6 +57,21 @@ description: https://www.figma.com/design/{fileKey}/...?node-id=0000-0001
 
 ---
 
+### enrich 모드 (epic-frontend-splitter 체이닝용)
+
+`epic-frontend-splitter`에서 자동 호출될 때 사용합니다.
+
+```
+mode: --enrich
+jira:        https://{your-instance}.atlassian.net/browse/ISSUE-0000
+ui:          https://www.figma.com/design/{fileKey}/...?node-id=0000-0000
+description: https://www.figma.com/design/{fileKey}/...?node-id=0000-0001
+```
+
+→ 기존 PRD 보존, Figma 데이터로 TODO 항목만 채움. 브랜치 생성/사용자 확인 건너뜀.
+
+---
+
 ### 입력 키워드 정리
 
 | 키 | 설명 | 필수 |
@@ -144,6 +159,9 @@ URL: https://{instance}.atlassian.net/browse/{ISSUE_KEY}
 ---
 
 ## Step 1.5: 브랜치 확인 및 자동 생성
+
+> **enrich 모드(`--enrich`)인 경우 이 단계를 건너뜁니다.**
+> 브랜치는 `epic-frontend-splitter`에서 이미 생성되었거나 별도로 관리됩니다.
 
 Jira 이슈 키가 파싱된 후, **데이터 수집과 병렬로** 브랜치 존재 여부를 확인합니다.
 
@@ -335,6 +353,8 @@ RULE-01: {규칙명}
 
 ## Step 5: 사용자 확인
 
+> **enrich 모드(`--enrich`)인 경우 이 단계를 건너뜁니다.** 자동 체이닝 흐름을 끊지 않습니다.
+
 `바로 올려줘` 옵션이 있으면 이 단계를 건너뜁니다.
 그렇지 않으면 PRD 초안을 출력하고 수정 여부를 확인합니다.
 
@@ -349,7 +369,14 @@ Tool: mcp-atlassian-*:jira_update_issue
     description: {작성된 PRD (Markdown)}
 ```
 
-기존 description이 있는 경우 기존 내용을 보존하고, 충돌 시 사용자에게 확인합니다.
+**일반 모드**: 기존 description이 있는 경우 기존 내용을 보존하고, 충돌 시 사용자에게 확인합니다.
+
+**enrich 모드 (`--enrich`)**: 사용자 확인 없이 아래 병합 전략을 적용합니다.
+- 기존 PRD의 구조(섹션 순서, References)를 유지합니다
+- `TODO:` 로 표시된 항목을 Figma 데이터로 채웁니다
+- Figma에서 새로 파악된 필드/조건/Validation은 해당 섹션에 추가합니다
+- 기존 에픽 기반 내용(User Story, AC, IF/THEN)은 Figma 데이터와 충돌하지 않는 한 그대로 보존합니다
+- 충돌 항목(내용이 다른 경우) → 기존 내용을 유지하고 `[Figma 보강: {내용}]` 주석으로 병기합니다
 
 ---
 
