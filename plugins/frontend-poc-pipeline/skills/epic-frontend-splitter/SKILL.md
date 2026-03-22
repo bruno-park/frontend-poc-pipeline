@@ -60,19 +60,25 @@ https://{your-instance}.atlassian.net/browse/{EPIC_KEY}
 1. mcp-atlassian-*:jira_get_issue
    issue_key: {EPIC_KEY}
    fields: *all
+   comment_limit: 0
 
 2. mcp-atlassian-*:jira_search
    jql: "parent = {EPIC_KEY}"
    fields: summary, issuetype, status, assignee
+   limit: 50
 ```
 
 확인 항목:
-- `issuetype.name` = `에픽` 인지 검증 (아니면 경고 출력)
-- 기존 하위 이슈 중 `[FE]` 또는 `[Frontend]` 또는 `[프론트엔드]` prefix 이슈가 있는지 확인 → 있으면 중복 방지 알림
+- `issuetype.name` = `에픽` 인지 검증 → 아니면 경고 출력 후 계속 여부 확인
+- **기존 FE 티켓 감지 및 모드 결정**:
+  - `[FE]` / `[Frontend]` / `[프론트엔드]` prefix 하위 이슈가 **없음** → **생성 모드** (신규 티켓 생성)
+  - `[FE]` / `[Frontend]` / `[프론트엔드]` prefix 하위 이슈가 **있음** → **수정 모드** (기존 티켓 업데이트)
+    - 기존 FE 티켓 목록을 표시하고 Step 3에서 사용자 확인 후 `jira_update_issue`로 PRD 덮어쓰기
 - **prefix 컨벤션 감지**: 기존 하위 이슈의 summary prefix 패턴을 분석
-  - `[백엔드]`, `[전송]` 같은 한국어 패턴 → 생성할 FE 티켓도 `[프론트엔드]` 사용
+  - `[백엔드]`, `[전송]` 같은 한국어 패턴 → `[프론트엔드]` 사용
   - `[BE]`, `[DLV]` 같은 영어 패턴 → `[FE]` 사용
   - 하위 이슈 없음 → 기본값 `[FE]`
+- **이슈 타입 확인**: 기존 하위 이슈가 있으면 그 `issue_type.name`을 티켓 생성에 재사용. 하위 이슈가 없으면 Step 5에서 `jira_get_project`로 확인.
 
 ---
 
@@ -97,16 +103,17 @@ https://{your-instance}.atlassian.net/browse/{EPIC_KEY}
 | **SDK** | SDK, 재생, 노출 감지, 자동재생, 음소거, 딤드, 피드형 재생, 팝업 모드, CALLBACK, IntersectionObserver |
 | **Deliverer** | 전송, 딜리버러, 트래커, 배포, 게재 |
 
-### 섹션 타입 분류 (복합 섹션 처리)
+### 섹션 타입 분류
 
-섹션은 내용 성격에 따라 4가지 타입으로 구분합니다:
+섹션은 내용 성격에 따라 5가지 타입으로 구분합니다:
 
 | 타입 | 해당 섹션 패턴 | 처리 방식 |
 |------|-------------|---------|
 | **A — 단일 파트** | CREATE, MODAL, LIST 등 화면 단위 섹션 | 분류 기준표로 파트 판정 → 해당 파트 화면으로 할당 |
-| **B — 복합 (User Stories)** | `사용자 스토리`, `User Stories` 섹션 | **분류 대상 제외** — 화면별 PRD 작성 시 US 번호 매핑 소스로만 활용 |
-| **C — 복합 (Validation Rules)** | `유효성`, `Validation` 섹션 | FE 해당 항목만 추출 (아래 필터 기준 적용) |
-| **D — 참고** | `TBD`, `관련 링크`, `Figma 기획서 참조` | 화면 PRD의 Dependencies/References에 이관 |
+| **B — User Stories** | `사용자 스토리`, `User Stories` 섹션 | **분류 대상 제외** — 화면별 PRD 작성 시 US 번호 매핑 소스로만 활용 |
+| **C — Validation Rules** | `유효성`, `Validation` 섹션 | FE 해당 항목만 추출 (아래 필터 기준 적용) |
+| **D — 참고** | `TBD`, `관련 링크`, `Figma 기획서 참조`, `OVERVIEW`, `스펙 구성` | 화면 PRD의 Dependencies/References에 이관. 특정 화면에 매칭 안 되는 항목은 모든 FE 티켓 References에 공통 첨부 |
+| **E — User Journey** | `사용자 여정`, `User Journey`, `시나리오` 섹션 | PRD "2. 진입 조건" + "4-3. 상태 조건" 작성 소스로 활용. 시나리오 단계(단계→액션→시스템 응답)를 IF/THEN으로 변환 |
 
 **Validation Rules FE 필터 기준:**
 
@@ -119,14 +126,6 @@ https://{your-instance}.atlassian.net/browse/{EPIC_KEY}
 - DB 중복 체크, 서버 권한 검증, 데이터 정합성 규칙
 - 서버에서만 판단 가능한 조건
 
-### 섹션 타입 분류 (복합 섹션 처리) — 타입 추가
-
-| 타입 | 해당 섹션 패턴 | 처리 방식 |
-|------|-------------|---------|
-| **E — User Journey** | `사용자 여정`, `User Journey`, `시나리오` 섹션 | PRD "2. 진입 조건" + "4-3. 상태 조건" 작성 소스로 활용 |
-
-> 타입 A/B/C/D 는 위 섹션 타입 분류 표에 이미 정의됨. 타입 E는 시나리오 단계(단계→액션→시스템 응답)를 상태 조건 IF/THEN으로 변환하는 데 사용한다.
-
 ### 분류 로직
 
 1. 3계층 파싱으로 섹션 분할
@@ -135,7 +134,7 @@ https://{your-instance}.atlassian.net/browse/{EPIC_KEY}
 4. 타입 A — 헤더 우선 판정 이후: 키워드 60% 이상 다수 파트 → 해당 파트; 60% 미만 → ⚠️ 검토 권장
 5. 타입 B: 분류 제외, US 번호 목록만 기록. 여러 화면에 걸치는 US → 관련 화면 모두에 포함 (화면별 스코핑 명시)
 6. 타입 C: FE 필터 기준으로 항목 추출
-7. 타입 D: 참고 정보로 분리 보관. 특정 화면에 매칭 안 되는 Figma(OVERVIEW, 스펙 구성 등) → 모든 FE 티켓 References에 공통 첨부
+7. 타입 D: 참고 정보로 분리 보관
 8. 타입 E: 시나리오의 단계별 액션을 IF/THEN 상태 조건으로 변환
 9. `###` 서브 섹션은 부모 `##` 섹션 타입에 포함하여 함께 분류
 10. `영향 파트` 테이블이 있으면 참고하되, 실제 섹션 내용 우선
@@ -147,6 +146,8 @@ https://{your-instance}.atlassian.net/browse/{EPIC_KEY}
 1. **정확 일치**: Figma 테이블 `화면명` 컬럼과 분류된 FE 화면명이 완전히 일치하는 경우 → 자동 할당
 2. **부분 문자열 포함**: 화면명이 Figma 테이블 항목에 포함(substring)되거나 그 반대인 경우 → 자동 할당 (대소문자 무시)
 3. **0개 또는 2개 이상 매칭**: 자동 할당 불가 → PRD에 `TODO: Figma URL 확인 필요` 표시하고 사용자에게 안내
+
+OVERVIEW, 스펙 구성 등 화면 단위가 아닌 Figma 항목은 자동 매핑 대상에서 제외하고 모든 FE 티켓의 References에 공통으로 첨부합니다.
 
 ### 분류 신뢰도 판정
 
@@ -189,7 +190,9 @@ https://{your-instance}.atlassian.net/browse/{EPIC_KEY}
 
 ## Step 3: 사용자 확인
 
-분류 결과를 출력한 후 확인을 받습니다:
+분류 결과를 출력한 후 확인을 받습니다.
+
+**생성 모드** (기존 FE 티켓 없음):
 
 ```
 위 분류로 프론트엔드 하위 티켓을 생성할까요?
@@ -201,7 +204,30 @@ https://{your-instance}.atlassian.net/browse/{EPIC_KEY}
 [r] 전체 재분류 — 처음부터 다시 분류합니다
 ```
 
-수정 요청(`m`/`s`/`a`/`r`) 시 분류를 재조정하고 Step 3을 반복합니다.
+**수정 모드** (기존 FE 티켓 있음):
+
+기존 FE 티켓 목록과 분류된 화면을 매핑하여 표시합니다:
+
+```
+기존 프론트엔드 티켓이 발견되었습니다. 새로 생성하지 않고 기존 티켓을 업데이트합니다.
+
+매핑 결과:
+  - {KEY-1} "[프론트엔드] {화면명1}" → 분류된 화면 1과 매핑
+  - {KEY-2} "[프론트엔드] {화면명2}" → 분류된 화면 2와 매핑
+  - (신규) {화면명3} → 기존 티켓 없음, 신규 생성 예정
+
+위 매핑으로 PRD를 업데이트할까요?
+
+[y] 확정 — 기존 티켓 PRD 업데이트 (+ 신규 티켓 생성)
+[m] 매핑 수정 — 어떤 화면을 어떤 티켓에 매핑할지 알려주세요
+[r] 전체 재분류 — 처음부터 다시 분류합니다
+```
+
+매핑 기준:
+- 기존 티켓 summary에서 화면명 추출 후 분류 결과와 부분 문자열 매핑
+- 1:1 매핑 불가 시 사용자에게 직접 지정 요청
+
+수정 요청(`m`/`r`) 시 분류를 재조정하고 Step 3을 반복합니다.
 
 **⚠️ 검토 권장 화면이 있는 경우**: Step 3에서 해당 화면을 먼저 강조하고, 사용자가 포함/제외를 명시적으로 결정하도록 안내합니다.
 
@@ -221,8 +247,9 @@ https://{your-instance}.atlassian.net/browse/{EPIC_KEY}
 | 구분 | URL |
 |---|---|
 | 에픽 (Jira) | {epic_jira_url} |
-| UI 화면 (Figma) | {figma_ui_url 또는 TODO} |
-| Description (Figma) | {figma_desc_url 또는 TODO} |
+| UI 화면 (Figma) | {figma_ui_url 또는 TODO: Figma URL 확인 필요} |
+| Description (Figma) | {figma_desc_url 또는 TODO: Figma URL 확인 필요} |
+| OVERVIEW (Figma) | {overview_url — 에픽에 있으면 공통 첨부} |
 
 ---
 
@@ -234,13 +261,12 @@ https://{your-instance}.atlassian.net/browse/{EPIC_KEY}
 
 ## 2. 진입 조건
 
-{이 화면에 진입하는 사용자 액션 또는 시스템 상태}
+{이 화면에 진입하는 사용자 액션 또는 시스템 상태 — 타입 E 시나리오에서 추출}
 
 ---
 
 ## 3. 사용자 스토리 (User Stories)
 
-```
 US-{N}. {스토리 제목}  ← 이 화면에 해당하는 US만 포함 (여러 화면 걸치는 US는 화면별 스코프 명시)
 As a {역할}
 I want to {행동}
@@ -250,7 +276,6 @@ Acceptance Criteria:
   - {조건 1}  ← 에픽 AC가 있으면 그대로 사용
   - {조건 2}  ← 에픽 AC가 없으면 이 화면의 F(인터랙션)/P(정책) 테이블에서 자동 생성
               ← 생성 불가 시: "TODO: AC 작성 필요"
-```
 
 > **AC 자동 생성 규칙**: 에픽 US에 AC가 없는 경우, 해당 화면의 `F-xx` 인터랙션과 `P-xx` 정책 항목을 기반으로 AC를 도출한다.
 > 예: F-03 "프리뷰 토글 전환 → 셀렉트박스 활성" → AC: "프리뷰 사용 선택 시 일시정지 시간 셀렉트박스가 활성화된다"
@@ -261,12 +286,10 @@ Acceptance Criteria:
 
 ### 4-1. 섹션 구조
 
-```
 {화면명}
 ├── [섹션 1] {섹션명}
 ├── [섹션 2] {섹션명}
 └── ...
-```
 
 ### 4-2. 필드 정의
 
@@ -276,11 +299,9 @@ Acceptance Criteria:
 
 ### 4-3. 상태 조건 (State Conditions)
 
-```
 IF   {조건}
 THEN {결과 상태/동작}
 ELSE {대안 동작 — 해당 시}
-```
 
 ### 4-4. 버튼 / 액션 정의
 
@@ -292,12 +313,10 @@ ELSE {대안 동작 — 해당 시}
 
 ## 5. 유효성 검사 규칙 (Validation Rules)
 
-```
 RULE-01: {규칙명}
   FIELDS: {적용 필드}
   CONSTRAINT: {제약 조건}
   ACTION: {위반 시 동작 — 에러 메시지, 포커스 이동 등}
-```
 
 ---
 
@@ -312,6 +331,8 @@ RULE-01: {규칙명}
 
 ### PRD 자체 검증 체크리스트
 
+PRD 작성 후 다음을 확인하고, 미통과 항목은 수정 후 진행합니다:
+
 ```
 [ ] 에픽 URL이 References에 포함되어 있는가?
 [ ] User Story가 최소 1개 이상이고 Acceptance Criteria가 있는가?
@@ -325,21 +346,43 @@ RULE-01: {규칙명}
 
 ## Step 5: Jira 하위 티켓 생성
 
-화면별로 순차 생성합니다. 각 티켓 생성 후 키를 확인하여 다음 단계에서 활용합니다.
+### 이슈 타입 결정
 
-**이슈 타입 사전 검증**: 생성 전에 `jira_get_project`로 프로젝트의 사용 가능한 이슈 타입 확인.
-- `작업` 존재 → 그대로 사용
-- `작업` 없음 → 사용 가능한 이슈 타입 목록을 사용자에게 제시하고 선택 요청
+- Step 1에서 기존 하위 이슈가 있었다면 → 그 `issue_type.name`을 그대로 사용
+- 기존 하위 이슈가 없다면 → `mcp-atlassian-*:jira_get_project`로 프로젝트 이슈 타입 조회 후:
+  - `작업` 존재 → `작업` 사용
+  - `작업` 없음 → 사용 가능한 이슈 타입 목록을 사용자에게 제시하고 선택 요청
+
+### 티켓 생성 또는 업데이트
+
+**생성 모드** — 화면별로 순차 생성합니다:
 
 ```
 mcp-atlassian-*:jira_create_issue(
-  project_key: "{PROJECT_KEY}",         // 에픽 이슈 키에서 자동 추출 (예: AX-65 → AX)
-  summary: "{PREFIX} {화면명} — {feature_id}",  // PREFIX: Step 1 감지 결과 ([프론트엔드] 또는 [FE])
-  issue_type: "작업",                   // 사전 검증된 이슈 타입
+  project_key: "{PROJECT_KEY}",          // 에픽 이슈 키에서 자동 추출 (예: AX-65 → AX)
+  summary: "{PREFIX} {화면명} — {feature_id}",   // PREFIX: Step 1 감지 결과
+  issue_type: "{결정된 이슈 타입}",
   description: "{Step 4 PRD (Markdown)}",
-  additional_fields: "{\"parent\": {\"key\": \"{EPIC_KEY}\"}}"  // 에픽 하위 연결
+  additional_fields: "{\"parent\": \"{EPIC_KEY}\"}"  // 문자열로 전달 — 객체 형식 사용 금지
 )
 ```
+
+> ⚠️ **주의**: `additional_fields`의 `parent` 값은 반드시 **문자열**로 전달해야 합니다.
+> 올바른 형식: `{"parent": "AX-65"}`
+> 잘못된 형식: `{"parent": {"key": "AX-65"}}` ← API 오류 발생
+
+**수정 모드** — 기존 FE 티켓이 있으면 `jira_create_issue` 대신 `jira_update_issue`로 PRD를 덮어씁니다:
+
+```
+mcp-atlassian-*:jira_update_issue(
+  issue_key: "{EXISTING_KEY}",           // Step 3 매핑에서 확정된 기존 티켓 키
+  description: "{Step 4 PRD (Markdown)}" // PRD 전체 덮어쓰기
+)
+```
+
+- 매핑된 기존 티켓 → `jira_update_issue`로 description 업데이트
+- 매핑되지 않은 신규 화면 → `jira_create_issue`로 신규 생성
+- summary는 변경하지 않음 (기존 티켓명 유지)
 
 **Summary 네이밍 컨벤션:**
 - `{PREFIX} {화면명} — {feature_id}`
@@ -356,27 +399,41 @@ mcp-atlassian-*:jira_create_issue(
 
 ## Step 5.5: figma-jira-prd 자동 체이닝
 
-생성 성공한 티켓 중 **Figma URL이 매핑된 티켓**에 한해 `figma-jira-prd`를 자동으로 실행합니다.
+> ⚠️ **이 단계는 반드시 실제로 실행해야 합니다.** 리포트만 출력하고 건너뛰지 마세요.
+
+생성 성공한 티켓 중 **Figma URL이 매핑된 티켓**에 한해 `figma-jira-prd` 스킬을 실제로 호출합니다.
 
 | 조건 | 처리 |
 |------|------|
-| Figma UI URL 확인됨 | `figma-jira-prd --enrich` 모드로 즉시 실행 |
+| Figma UI URL 확인됨 | `figma-jira-prd` 스킬을 `--enrich` 모드로 즉시 실행 |
 | Figma URL이 `TODO` | 건너뜀 → Step 6 리포트에서 수동 실행 안내 |
 | 티켓 생성 실패 | 건너뜀 |
 
-각 티켓에 대해 순차 실행합니다:
+### 실행 전 사용자 확인
+
+Figma URL이 매핑된 티켓 수를 보여주고 확인을 받습니다:
 
 ```
-figma-jira-prd(
-  mode: --enrich,
-  jira: {NEW_TICKET_URL},
-  ui:   {figma_ui_url},
-  description: {figma_desc_url}  // 없으면 생략
-)
+Figma URL이 매핑된 티켓 {N}개에 대해 figma-jira-prd로 PRD를 자동 보강할까요?
+(보강 대상: {KEY-1}, {KEY-2}, ...)
+
+[y] 진행
+[n] 건너뜀 — 나중에 수동으로 실행
 ```
 
-> `--enrich` 모드는 브랜치 생성, 사용자 확인 단계를 건너뛰고
-> 기존 PRD의 TODO 항목을 Figma 데이터로 채웁니다.
+### 실행 방법
+
+`[y]` 선택 시 각 티켓에 대해 Skill 도구를 사용하여 `figma-jira-prd` 스킬을 순차 호출합니다:
+
+```
+Skill("figma-jira-prd", args="--enrich {NEW_TICKET_JIRA_URL} ui:{figma_ui_url} desc:{figma_desc_url}")
+```
+
+인자 형식:
+- `--enrich`: 브랜치 생성, 사용자 확인 단계를 건너뛰고 기존 PRD의 TODO 항목을 Figma 데이터로 채움
+- Jira URL: `https://{instance}.atlassian.net/browse/{NEW_KEY}`
+- `ui:`: Figma UI 화면 URL
+- `desc:`: Figma Description URL (없으면 생략)
 
 ---
 
@@ -389,8 +446,8 @@ figma-jira-prd(
 prefix 컨벤션: {감지된 prefix} ([프론트엔드] 또는 [FE])
 
 생성 성공:
-  1. {NEW_KEY_1}: {PREFIX} {화면명1} → {Jira URL}
-  2. {NEW_KEY_2}: {PREFIX} {화면명2} → {Jira URL}
+  1. {NEW_KEY_1}: {PREFIX} {화면명1} → https://{instance}/browse/{NEW_KEY_1}
+  2. {NEW_KEY_2}: {PREFIX} {화면명2} → https://{instance}/browse/{NEW_KEY_2}
 
 생성 실패 (있을 경우):
   - {화면명3}: {에러 메시지} → [재시도] 원하시면 알려주세요
@@ -399,6 +456,7 @@ figma-jira-prd 자동 보강:
   - {NEW_KEY_1}: Figma 보강 완료 (TODO {N}개 채움)
   - {NEW_KEY_2}: Figma 보강 완료 (TODO {N}개 채움)
   - {NEW_KEY_3}: Figma URL 없음 — 수동 실행 필요
+  - (건너뜀): 사용자 요청으로 생략
 
 PRD 구성 (총):
   - User Stories: {합계}개 (AC 자동 생성: {N}개, TODO: {N}개)
@@ -419,9 +477,11 @@ PRD 구성 (총):
 | 상황 | 처리 |
 |------|------|
 | 에픽이 아닌 이슈 입력 | 경고 출력 후 계속 진행 여부 확인 |
-| 이미 `[FE]` 하위 티켓 존재 | 기존 티켓 목록 표시 → 중복 생성 방지, 보완 여부 확인 |
+| 이미 `[FE]` / `[프론트엔드]` 하위 티켓 존재 | **수정 모드**로 전환 — 신규 생성 없이 기존 티켓 PRD를 `jira_update_issue`로 업데이트 |
 | Frontend 섹션이 없음 | "프론트엔드 작업이 식별되지 않았습니다" 출력 |
-| Figma URL이 에픽에 없음 | PRD에 `TODO: Figma URL 입력 필요` 표시, `/figma-jira-prd`로 보강 안내 |
+| Figma URL이 에픽에 없음 | PRD에 `TODO: Figma URL 입력 필요` 표시, Step 5.5 건너뜀, `/figma-jira-prd`로 보강 안내 |
 | 에픽 description이 비어있음 | summary만으로 1개 통합 티켓 생성 제안 |
 | 이슈 타입 `작업` 없음 | `jira_get_project`로 사용 가능한 이슈 타입 조회 후 사용자 선택 |
 | 프로젝트 키 다름 | 에픽 이슈 키에서 프로젝트 키 자동 추출 (예: AX-65 → AX) |
+| `additional_fields` parent 오류 | 문자열 형식 `{"parent": "{EPIC_KEY}"}` 확인 후 재시도 |
+| figma-jira-prd --enrich 실패 | 에러 로그 출력, 해당 티켓만 건너뜀, 나머지 계속 진행 |
