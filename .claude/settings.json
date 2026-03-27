@@ -1,11 +1,14 @@
 {
   "permissions": {
+    "allow": [
+      "mcp__mcp-atlassian-nestads__jira_get_issue",
+      "mcp__plugin_oh-my-claudecode_t__project_memory_read",
+      "mcp__plugin_oh-my-claudecode_t__state_get_status"
+    ],
     "additionalDirectories": [
       "/tmp",
-      "/Users/wisebirds/.claude/plans"
-    ],
-    "allow": [
-      "mcp__mcp-atlassian-nestads__jira_get_issue"
+      "/Users/wisebirds/.claude/plans",
+      "/Users/wisebirds/WebstormProjects/poc/frontend-poc-pipeline/pageComponents"
     ]
   },
   "enabledPlugins": {}
