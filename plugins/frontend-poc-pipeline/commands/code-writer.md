@@ -12,6 +12,8 @@ Implements production-ready React components from Figma design or screenshots, f
 - If planner says **"Needed: Yes"** → uses `useUrlQuery` hook for pagination/sort/filter in URL
 - If planner says **"Needed: No"** → uses regular state management (useState, Zustand, React Query)
 
+> **컨벤션 참조**: 네이밍, 스타일링, 컴포넌트 정의 패턴, memo/useMemo/useCallback, 훅 패턴, co-location 규칙은 모두 `conventions` 스킬을 따릅니다.
+
 ## Arguments & Flag Routing
 
 ### 플래그별 동작 (가장 먼저 파싱)
@@ -91,13 +93,12 @@ Implements production-ready React components from Figma design or screenshots, f
 **CRITICAL: Check shadcn/ui components FIRST**
 Before implementing any component, check `packages/ui/src/components/ui/` for existing components:
 
-- ✅ **Available components**: accordion, badge, button, calendar, carousel, checkbox, dialog, drawer, form, input, input-password, input-textarea, label, label-badge, notice-text, point-badge, popover, progress, radio-group, rank-checkbox, select, separator, seperator-dot, skeleton, slider, spinner, switch, tabs, textarea, tooltip, upload, sonner
-- ✅ **MUST use these** instead of building custom components
-- ✅ Import from `@/components/ui/[component-name]` (e.g., `@/components/ui/button`)
+- Available components: accordion, badge, button, calendar, carousel, checkbox, dialog, drawer, form, input, input-password, input-textarea, label, label-badge, notice-text, point-badge, popover, progress, radio-group, rank-checkbox, select, separator, seperator-dot, skeleton, slider, spinner, switch, tabs, textarea, tooltip, upload, sonner
+- **MUST use these** instead of building custom components
+- Import from `@/components/ui/[component-name]` (e.g., `@/components/ui/button`)
 
 Read and apply rules from memory files:
 - Project structure from CLAUDE.md
-- Naming conventions from CONVENTIONS.md
 - Existing similar components for consistency
 
 Parse optional implementation context (last argument) for additional requirements.
@@ -438,202 +439,28 @@ Follow the file structure defined in planner.md:
 - Follow component hierarchy from plan
 - Implement types and interfaces as planned
 
-**Structure is determined by the design — not by a fixed template.** Use planner.md as the source of truth.
-
-```
-pageComponents/feature-name/
-├── feature-name.types.ts
-├── FeatureContainer.tsx               # layout only
-├── components/
-│   └── [components based on design]  # determined by planner.md
-└── hooks/
-    ├── useFeatureQuery.hook.ts        # thin wrapper: only returns useQuery
-    └── useFeaturePage.hook.ts         # optional: only create when Container grows complex
-```
-
-### Co-location Rules (MUST FOLLOW)
-
-**Principle: Keep related code close to where it is used. Only promote to global when actual reuse occurs.**
-
-| Question | Placement |
-|----------|-----------|
-| Used only in this feature? | → Place inside `pageComponents/[feature]/` |
-| Used across multiple features? | → Place in global (`utils/`, `hooks/`, `components/`) |
-| Only one feature now, but might be shared later? | → **Keep in feature folder first, promote to global only when actual reuse happens** |
-
-**Placement by file type:**
-
-| File Type | Feature-specific | Global shared |
-|-----------|-----------------|---------------|
-| Table column definitions | `pageComponents/[feature]/components/table/featureTable.column.ts` | `components/table/commonTable.column.ts` |
-| Utility functions | `pageComponents/[feature]/utils/feature.utils.ts` | `utils/format.utils.ts` |
-| Custom Hooks | `pageComponents/[feature]/hooks/useFeature.hook.ts` | `hooks/useCommon.hook.ts` |
-| Constants/enums | `pageComponents/[feature]/feature.constants.ts` | `constants/common.constants.ts` |
-| Type definitions | `pageComponents/[feature]/feature.types.ts` | `types/common.type.ts` |
-
-**Example — Table column definitions:**
-
-```typescript
-// ✅ Feature-specific: pageComponents/product/components/table/product-table-columns.ts
-export const PRODUCT_TABLE_COLUMN_LIST = [
-  { key: 'name', label: 'Product Name', width: 200 },
-  { key: 'status', label: 'Status', width: 100 },
-];
-
-// ✅ Global shared (column renderers reused across multiple features):
-// components/table/common-columns.ts
-export const renderStatusBadge = (status: string) => { /* ... */ };
-```
+> **컨벤션 참조**: Co-location 규칙은 `conventions` 스킬의 "Co-location Rules" 섹션을 따릅니다.
+> - Feature-specific 코드 → `pageComponents/[feature]/`
+> - 실제 재사용 발생 시에만 global로 승격
 
 ---
 
 ## Phase 5: Implementation
 
-### Naming Rules (MUST FOLLOW):
+> **컨벤션 참조**: 아래 규칙은 `conventions` 스킬을 따릅니다.
+> - Naming Conventions (kebab-case 파일, PascalCase 컴포넌트, I prefix, Type suffix)
+> - Component Definition Pattern (arrow function, export default 분리, props interface 5개 기준)
+> - Component Type Guidelines (memo/useMemo/useCallback)
+> - UI Component Library (shadcn/ui 우선 → rsuite fallback)
+> - Styling Pattern (Tailwind, rem, design tokens)
+> - Two-Layer Hook Pattern (API query + wrapper)
+> - DO / DON'T 목록
 
-- **Component files**: PascalCase (`GiftProductInfo.tsx`)
-- **Helper files**: camelCase + dot suffix (`giftProduct.type.ts`, `giftProductTable.column.ts`)
-- **Interfaces**: `I` prefix (`IGiftProductInfoProps`)
-- **Types**: `Type` suffix (`GiftOrderResponseType`)
-- **Collections**: postfix (`itemList`, `userMap`, `tagSet`)
-- **Booleans**: `is`/`are` prefix (`isExpanded`, `areItemsLoaded`)
-- **Handlers**: `handle` prefix (`handleClick`, `handleSubmit`)
-- **Constants**: `UPPER_CASE` (`API_BASE_URL`, `MAX_ITEMS`)
+### Implementation-Specific Rules
 
-### Component Structure (MUST FOLLOW):
+**Hook Order**: useStore/useState → useRef/useMemo → useCallback/useEffect → functions
 
-**Props Interface Rules**:
-- **5 or fewer props**: Use inline type definition (NO separate interface)
-- **6 or more props**: Extract to separate interface above component
-
-Example with **6 or more props**:
-
-```typescript
-import { useState } from 'react';
-import type { IGiftOrder } from '../types';
-
-interface IComponentProps {
-  data: IGiftOrder;
-  isLoading?: boolean;
-  onSubmit?: () => void;
-  title?: string;
-  description?: string;
-  className?: string;
-}
-
-export const ComponentName = ({ data, isLoading = false }: IComponentProps) => {
-  // Hook order: useStore/useState → useRef/useMemo → useCallback/useEffect → functions
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const handleClick = () => {
-    setIsExpanded(!isExpanded);
-  };
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  return (
-    <div className="flex flex-col gap-[1.25rem]">
-      {/* Component JSX */}
-    </div>
-  );
-};
-```
-
-### React Optimization (MUST FOLLOW):
-
-**`memo()` — Prevent unnecessary component re-renders:**
-
-- **Export pattern**: `export default memo(ComponentName);` (separate at end of file)
-- **Most effective**: No props → `memo` always blocks parent re-renders (shallow comparison finds zero differences)
-- Use when: Props are stable and parent re-renders frequently (list items, table rows, etc.)
-- Do NOT use when: Props are recreated every render, or component is simple
-- If planner.md specifies **Memo: Yes/No**, follow it exactly
-
-```typescript
-// ✅ Use memo — list item with stable props
-const ProductTableRow = ({ product }: { product: IProduct }) => {
-  return <tr>...</tr>;
-};
-
-export default memo(ProductTableRow);
-```
-
-**`useMemo` — Cache expensive computations:**
-
-- Use when: Large array filtering/sorting, complex data transformations, column definition generation
-- Do NOT use when: Simple variable assignment, primitive values, JSX creation
-- Always specify dependency array precisely
-
-```typescript
-// ✅ useMemo — prevent column definitions from being recreated every render
-const columnList = useMemo(() => [
-  { key: 'name', label: 'Name', width: 200 },
-  { key: 'status', label: 'Status', width: 100, cell: renderStatusBadge },
-], []);
-
-// ✅ useMemo — filtered data
-const filteredList = useMemo(
-  () => dataList.filter((item) => item.status === selectedStatus),
-  [dataList, selectedStatus],
-);
-
-// ❌ useMemo unnecessary — simple value
-const isDisabled = useMemo(() => !name, [name]); // just use: const isDisabled = !name;
-```
-
-**`useCallback` — Stabilize function references:**
-
-- Use when: Passing handler to `memo()`-wrapped child, or function used in dependency array
-- Do NOT use when: Simple inline handler in JSX, or child is NOT wrapped with `memo()`
-- Skip `useCallback` when it provides no benefit
-
-```typescript
-// ✅ useCallback — passed to memo-wrapped child
-const handleRowClick = useCallback((id: string) => {
-  router.push(`/product/${id}`);
-}, [router]);
-
-<ProductTableRow onClick={handleRowClick} /> // ProductTableRow is wrapped with memo()
-
-// ❌ useCallback unnecessary — child is not memo-wrapped
-const handleClick = useCallback(() => setIsOpen(true), []); // just use arrow function
-```
-
-### shadcn/ui Component Usage (HIGHEST PRIORITY):
-
-**Priority order: Use shadcn/ui first, then rsuite if needed**
-
-Common use cases:
-- **Buttons**: `Button` from `@/components/ui/button`
-- **Forms**: `Form`, `FormField`, `FormItem`, `FormLabel`, `FormControl` from `@/components/ui/form`
-- **Inputs**: `Input`, `Textarea` from `@/components/ui/input`
-- **Dialogs/Modals**: `Dialog`, `Drawer` from `@/components/ui/dialog`
-- **Expandable sections**: `Accordion` from `@/components/ui/accordion` (NOT custom state)
-- **Badges**: `Badge` from `@/components/ui/badge`
-- **Loading states**: `Skeleton` from `@/components/ui/skeleton`
-- **Navigation**: `Tabs` from `@/components/ui/tabs`
-- **Tooltips**: `Tooltip`, `Popover` from `@/components/ui/tooltip`
-- **Selections**: `Checkbox`, `RadioGroup`, `Select`, `Switch` from their respective `@/components/ui/` paths
-
-**rsuite components** (use when shadcn/ui doesn't have the needed component):
-```typescript
-import { Panel, Stack, Grid, Row, Col, Table } from "rsuite";
-```
-
-### Styling Rules (MUST FOLLOW):
-
-**Design System Tokens**:
-- Colors: `text-primary`, `text-secondary`, `text-tertiary`, `text-disabled`
-- Backgrounds: `bg-white`, `bg-off-white`, `bg-primary`
-- Typography: `text-header-01`, `text-subtitle-01-600`, `text-body-02-400`
-- Borders: `border-divider-primary`, `border-divider-secondary`
-
-**Spacing**: Use `rem` units — `gap-[1.25rem]`, `p-[1.875rem]`. Never use `px`.
-
-**Images**: Use Next.js `Image` component with `fill`, `alt`, and `sizes` props.
-
+**Images**: Use Next.js `Image` component with `fill`, `alt`, and `sizes` props:
 ```typescript
 import Image from 'next/image';
 
@@ -641,53 +468,6 @@ import Image from 'next/image';
   <Image src={imageUrl} fill alt="Description" className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
 </div>
 ```
-
-**DO NOT**:
-- ❌ Use `cn` function
-- ❌ Use `<img>` tag (use Next.js `Image` component)
-- ❌ Use nested ternaries (use if/else or ts-pattern)
-- ❌ Use arbitrary colors (#fff, gray-500)
-- ❌ Build custom components when shadcn/ui has them
-
-### API Integration (Co-located in Hook Files):
-
-**Define API path, API functions, and React Query hooks together in the same hook file.**
-
-```typescript
-// pageComponents/[feature]/hooks/useFeatureQuery.hook.ts
-import { useQuery, useMutation } from '@tanstack/react-query';
-import axios from '@/apis';
-import queryString from 'query-string';
-
-// API path — defined in hook file
-const featureApiPath = '/api/v1/features';
-
-// API function — defined in hook file
-const getFeatureList = async (params: IFeatureQueryParams) => {
-  const query = queryString.stringify(params, { skipEmptyString: true, skipNull: true });
-  return await axios.get(`${featureApiPath}?${query}`);
-};
-
-// Query hook
-export const useFeatureQuery = (params: IFeatureQueryParams) => {
-  return useQuery({
-    queryKey: [featureApiPath, params],
-    queryFn: () => getFeatureList(params),
-    refetchOnWindowFocus: false,
-  });
-};
-
-// Mutation hook
-export const useFeatureMutation = () => {
-  return useMutation({
-    mutationFn: async (data: IFeatureInput) => {
-      return await axios.post(featureApiPath, data);
-    },
-  });
-};
-```
-
-**DO NOT** create separate `services/` directories or add to `apis/service/` — keep API logic co-located in hook files.
 
 ---
 
@@ -723,7 +503,6 @@ const FeatureTable = () => {
 };
 
 // ✅ Container: layout only, no useEffect
-// Children read URL directly — do NOT pass urlQuery as props
 const FeatureContainer = () => {
   return (
     <>
@@ -739,7 +518,7 @@ const FeatureContainer = () => {
 |------|-----|
 | URL values (`page`, `startDate`, ...) | each component calls `useUrlQuery` directly |
 | URL-derived values (constant lookups) | each component computes directly from URL (no prop needed) |
-| Local UI state (`isOpen`, `onClose`) | pass as props ✅ |
+| Local UI state (`isOpen`, `onClose`) | pass as props |
 
 **URL Behavior Rules:**
 1. Initial load: Clean URL, no query params — defaults used internally
@@ -797,11 +576,7 @@ For each component:
    - Component files (parent to child)
    - Page file (last)
 
-3. **Follow conventions**:
-   - Destructure props: `const { title, items } = props`
-   - Arrow functions for components
-   - Separate default export
-   - Add comments only for complex logic
+3. **Follow conventions**: Destructure props, arrow functions, separate default export, comments only for complex logic
 
 4. **Use TodoWrite** to track implementation progress
 
@@ -818,8 +593,7 @@ For each component:
 
 2. **Code review**:
    - Check all shadcn/ui components are used where applicable
-   - Verify naming conventions are followed
-   - Ensure proper component structure and hook order
+   - Verify conventions are followed (see `conventions` skill)
    - Validate TypeScript types match planner.md
 
 3. **URL params verification** (only when `URL_STATE_MODE = true`):
@@ -840,7 +614,7 @@ For each component:
 
 1. **planner.md** — Component structure, files, types, URL state schema
 2. **Implementation context** (last arg) — Additional requirements
-3. **CLAUDE.md / CONVENTIONS.md** — Project rules and coding standards
+3. **conventions skill** — Project rules and coding standards
 4. **Figma/image design** — Visual specifications
 5. **Common React patterns** — Framework best practices
 
@@ -853,34 +627,24 @@ For each component:
 Before completing, verify:
 
 **planner.md Compliance**:
-- ✅ All files and directories match plan
-- ✅ All components implemented as specified
-- ✅ All interfaces and types match planner.md
-- ✅ Component props match specifications
+- All files and directories match plan
+- All components implemented as specified
+- All interfaces and types match planner.md
+- Component props match specifications
 
-**Component & Code Quality**:
-- ✅ shadcn/ui components used from `@repo/ui` (HIGHEST PRIORITY)
-- ✅ Naming conventions followed (kebab-case files, PascalCase components, I prefix, Type suffix)
-- ✅ Design system tokens used (no arbitrary colors, rem units)
-- ✅ No `cn()`, no nested ternaries, no `<img>` tag
-
-**Co-location**:
-- ✅ Feature-specific code (columns, utils, hooks, types) placed inside `pageComponents/[feature]/`
-- ✅ Only truly shared code placed in global `utils/`, `hooks/`, `components/`
-- ✅ No premature extraction to global — promote only when actual reuse occurs
-
-**React Optimization**:
-- ✅ Follows planner.md Memo specification (Yes → `export default memo(Component)`)
-- ✅ `useMemo` — used for expensive computations, column definitions, filtered lists
-- ✅ `useCallback` — used for handlers passed to `memo()`-wrapped children
-- ✅ No unnecessary optimization (simple values, non-memo children)
+**Conventions Compliance** (see `conventions` skill for full rules):
+- shadcn/ui components used (HIGHEST PRIORITY)
+- Naming conventions followed
+- Design system tokens used (no arbitrary colors, rem units)
+- Co-location rules followed
+- React optimization (memo/useMemo/useCallback) per planner.md spec
+- No `cn()`, no nested ternaries, no `<img>` tag
 
 **URL Params** (only when `URL_STATE_MODE = true`):
-- ✅ URL schema matches planner.md's URL Params table
-- ✅ No Zustand session store for pagination/sort/filter
-- ✅ Default values NOT in URL on initial load
-- ✅ Page resets to 1 when filter/size changes
-- ✅ Direct URL access restores full state
+- URL schema matches planner.md's URL Params table
+- No Zustand session store for pagination/sort/filter
+- Default values NOT in URL on initial load
+- Page resets to 1 when filter/size changes
 
 ---
 

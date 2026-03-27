@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "/tmp",
+      "/Users/wisebirds/.claude/plans"
+    ],
+    "allow": [
+      "mcp__mcp-atlassian-nestads__jira_get_issue"
+    ]
+  },
+  "enabledPlugins": {}
+}
