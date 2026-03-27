@@ -345,7 +345,11 @@ If hasDetail → Glob: pageComponents/*/components/**/*Detail.tsx,
                       pageComponents/*/components/**/*Tab.tsx
 ```
 
-For the top 1–2 matches of each suffix, Read the first 30 lines to understand the component's props interface and structure. Store these as `pattern_references` for Phase 4.
+For the top 1–2 matches of each suffix:
+1. Read the first 30 lines to understand props interface and structure
+2. Grep for type-switching patterns (`switch`, `case`, `===.*Type`) within the file
+3. If type-switching found, Read those sections to map which types are already handled
+4. Store as `pattern_references` with `handled_types: string[]` and `extension_points: string[]` fields
 
 ### Step 1.5F: Build Project Context Summary
 
@@ -363,12 +367,32 @@ project_context = {
 }
 ```
 
+### Step 1.5G: Capability Analysis (기존 컴포넌트 기능 분석)
+
+`pattern_references`의 `handled_types`/`extension_points`와 PRD `field_component_map`을 대조하여 기존 코드 커버리지를 산출합니다.
+
+**절차**:
+1. **조건 분기 탐색** — `pattern_references` 파일들에서 `switch|case`, `===.*Type` 패턴을 Grep
+2. **커버리지 판정** — `(기존 처리 항목 수 / PRD 전체 필드 수)` = coverage_ratio
+3. **접근법 결정**:
+   | 커버리지 | 접근법 | 설명 |
+   |---|---|---|
+   | ≥70% | **EXTEND** | enum + 조건 분기 추가 위주, 새 파일 최소화 |
+   | 40~70% | **하이브리드** | 핵심 섹션만 NEW, 나머지 EXTEND |
+   | <40% | **NEW** | 별도 페이지/컴포넌트 트리 구성 |
+4. **결과 저장** — `project_context.capability_analysis`에 `coverage_ratio`, `recommended_approach`, `extend_targets[]`, `new_targets[]` 기록
+
 **Reuse decision rules (Phase 2–5에서 적용):**
 1. 동일 이름 컴포넌트가 `common/` / `_shared/` / `components/`에 존재 → **REUSE**
 2. 동일 API 엔드포인트를 호출하는 훅이 존재 → **REUSE**
 3. 동일 이름 type/interface 존재 → import로 참조 (재정의 금지)
 4. suffix 매칭 컴포넌트가 다른 feature에 존재 → NEW 컴포넌트에 **Pattern Reference** 첨부
 5. shadcn/ui에 대응 컴포넌트 존재 → 커스텀 구현 대신 shadcn/ui 사용
+6. **기존 컴포넌트가 switch/조건문으로 타입별 분기 처리 중이고, 새 타입 분기만 추가하면 되는 경우 → EXTEND (NEW 금지)**
+   - 예: `SpecTable`이 TYPE_A/TYPE_B를 switch로 처리 → 새 TYPE_C 추가는 EXTEND
+7. **enum 추가 + 모델 기본값 추가만으로 기존 흐름이 동작하는 경우 → EXTEND**
+   - 예: `ProductType` enum에 새 값 추가 + `defaultModel`에 분기 추가 → 기존 create 페이지가 동작
+8. **NEW 제안 전 필수 검증: "기존 컴포넌트를 EXTEND해서 해결 가능한가?"** — 가능하면 EXTEND 우선, 불가능한 경우에만 NEW (사유 명시)
 
 ---
 
@@ -405,7 +429,11 @@ project_context = {
 
 For each component, document:
 
-0. **Source**: `REUSE` (import path only, skip full spec) | `NEW` (full spec below) | `NEW` + **Pattern Reference** (full spec + similar existing component path)
+0. **Source**:
+   - `REUSE`: 그대로 import, 수정 없음 (import path만 명시, full spec 생략)
+   - `EXTEND`: 기존 파일에 조건 분기/enum/기본값 추가 (수정 대상 파일 + 변경 내용 명시)
+   - `NEW`: 완전 새 파일 생성 (full spec 작성)
+   - `NEW` + **Pattern Reference**: 새 파일이지만 기존 패턴 참조
 1. **Component Name & Path**
 2. **Memo**: Whether to use React.memo()
 3. **Purpose**: Brief description (1 line)
@@ -508,6 +536,19 @@ interface IEventRankingItemProps {
 
 Note: Component names include parent folder prefix "Event"
 Note: REUSE components only need Source + Import + Purpose. Full spec is omitted.
+Note: EXTEND components list target file + specific changes only. No full spec needed.
+
+---
+
+## Component: FeatureSpecTable (EXTEND)
+
+**Source**: EXTEND `pageComponents/[feature]/components/spec/FeatureSpecTable.tsx`
+**변경 내용**: switch에 `NEW_TYPE_A`/`NEW_TYPE_B` case 추가, 특정 조건부 disable 로직 추가
+
+## Enum: variables.ts (EXTEND)
+
+**Source**: EXTEND `utils/variables.ts`
+**변경 내용**: `FeatureType.NEW_VALUE`, `SpecType.NEW_A/NEW_B` 추가
 ````
 
 ---
@@ -701,6 +742,12 @@ Include this ordered checklist in every planner.md output:
 - [x] Confirmed reusable components: [list from project_context with import paths]
 - [x] Confirmed reusable hooks: [list from project_context with import paths]
 - [x] Confirmed existing types to import: [list from project_context with import paths]
+
+### Step 0.5: Verify Extension Points (EXTEND 접근법일 때)
+- [ ] 기존 enum/변수 파일의 확장 포인트 확인: [파일 목록 + 추가할 값]
+- [ ] 기존 모델/기본값의 확장 포인트 확인: [파일 목록 + 추가할 분기]
+- [ ] 기존 컴포넌트의 조건 분기 확장 포인트 확인: [파일 목록 + 추가할 case]
+- [ ] 새로 생성이 반드시 필요한 파일 확인: [파일 목록 + 필요 사유]
 
 ### Step 1: Types & Constants
 - [ ] Define API request/response types in query hook file (skip if REUSE hook covers it)
