@@ -3,7 +3,9 @@
     "allow": [
       "mcp__mcp-atlassian-nestads__jira_get_issue",
       "mcp__plugin_oh-my-claudecode_t__project_memory_read",
-      "mcp__plugin_oh-my-claudecode_t__state_get_status"
+      "mcp__plugin_oh-my-claudecode_t__state_get_status",
+      "Read(//Users/wisebirds/_bmad/core/**)",
+      "Read(//Users/wisebirds/_bmad/_config/**)"
     ],
     "additionalDirectories": [
       "/tmp",
