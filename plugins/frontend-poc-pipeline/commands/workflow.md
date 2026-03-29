@@ -65,7 +65,7 @@ model: claude-sonnet-4-6
 | **[2] planner.md** | 파일 존재 + URL State 섹션 포함 + 구현 체크리스트 완성 | `/planner` 재실행 |
 | **[3] API 훅** | `.hook.ts` 파일 존재 + TypeScript 타입 정의 + API path 상수 export | `api-integration` 재실행 |
 | **[4] 테스트 RED** | AC 100% 커버 + 모든 테스트 FAIL + `data-testid` 없음 + RBAC 시나리오 포함 | 테스트 강화 후 재실행 |
-| **[6] 리팩터** | 모든 테스트 PASS + `console.log` 없음 + `px` 단위 없음 + 미사용 import 없음 | 리팩터 후 재실행 |
+| **[6] 리팩터** | 단위 + E2E 모든 테스트 PASS + `console.log` 없음 + `px` 단위 없음 + 미사용 import 없음 | 리팩터 후 재실행 |
 | **[7] 커버리지** | Statements/Branches/Functions/Lines ≥ 80% + AC 커버리지 100% | 테스트 보강 후 재실행 |
 | **[8] 코드 리뷰** | Critical/High 이슈 0개 + 컨벤션 위반 0개 | 수정 후 재실행 |
 

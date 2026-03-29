@@ -7,7 +7,7 @@ model: claude-sonnet-4-6
 
 # Refactor — TDD REFACTOR Phase
 
-**전제 조건: 모든 단위 테스트가 GREEN(통과) 상태여야 합니다.**
+**전제 조건: 모든 테스트(단위 + E2E)가 GREEN(통과) 상태여야 합니다.**
 
 > 리팩터링 중 테스트가 RED로 돌아가면 즉시 중단하고 원복하세요.
 
@@ -26,7 +26,7 @@ model: claude-sonnet-4-6
 
 ## Phase 0: 사전 검증
 
-### 1. 테스트 GREEN 확인 (필수)
+### 1. 단위 테스트 GREEN 확인 (필수)
 
 ```bash
 npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -20
@@ -35,7 +35,43 @@ npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -20
 - 모든 테스트 PASS → 계속
 - 실패 테스트 있음 → **STOP**: "GREEN 상태가 아닙니다. /ui-builder로 먼저 구현을 완성하세요."
 
-### 2. 대상 파일 목록 파악
+### 2. E2E 테스트 존재 확인 및 GREEN 검증
+
+**2-1. E2E 파일 존재 확인:**
+```
+Glob: e2e/[feature]/**/*.spec.ts
+```
+
+- E2E 파일 없음 → 단위 테스트만으로 진행 (이하 E2E 단계 스킵)
+- E2E 파일 있음 → 2-2로 진행
+
+**2-2. Playwright 설치 확인:**
+```bash
+npx playwright --version 2>&1 | head -1
+```
+
+- 버전 출력됨 → 2-3으로 진행
+- 에러 (미설치) → 사용자에게 알림: "Playwright가 설치되지 않았습니다. `npx playwright install`로 설치하거나, E2E 검증 없이 진행합니다." → 단위 테스트만으로 진행
+
+**2-3. 앱 실행 여부 확인:**
+```bash
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3001 2>/dev/null || echo "NOT_RUNNING"
+```
+
+| 결과 | 조치 |
+|------|------|
+| HTTP 200 (앱 실행 중) | Playwright 실행으로 GREEN 확인 (필수) |
+| NOT_RUNNING (앱 미실행) | 사용자에게 안내: "`npm run dev` 후 E2E 검증이 필요합니다." → 완료 리포트에 "E2E 검증 보류" 명시 |
+
+**2-4. E2E GREEN 확인 (앱 실행 중인 경우):**
+```bash
+npx playwright test e2e/[feature]/ --reporter=list 2>&1 | tail -20
+```
+
+- 모든 테스트 PASS → 계속
+- 실패 테스트 있음 → **STOP**: "E2E GREEN 상태가 아닙니다. 구현을 먼저 완성하세요."
+
+### 3. 대상 파일 목록 파악
 
 ```
 Glob: pageComponents/[feature]/**/*.tsx
@@ -58,7 +94,7 @@ planner.md를 읽어 구현 의도와 비교.
 | TODO/FIXME 주석 처리 | Grep: TODO, FIXME |
 | 콘솔 로그 제거 | Grep: console.log |
 
-각 변경 후 즉시 테스트 실행:
+각 변경 후 즉시 단위 테스트 실행 (E2E는 Phase 5에서 최종 검증):
 ```bash
 npx vitest run pageComponents/[feature] 2>&1 | tail -5
 ```
@@ -90,7 +126,7 @@ Grep: <img  (Next.js Image로 교체)
 Grep: style={{ (인라인 스타일 → Tailwind로 교체)
 ```
 
-각 수정 후 테스트 실행 확인.
+각 수정 후 단위 테스트 실행 확인 (E2E는 Phase 5에서 최종 검증).
 
 ---
 
@@ -117,7 +153,7 @@ export default ComponentName
 - 불필요한 useMemo (단순 값 할당) → 제거
 - 불필요한 useCallback (memo 안 된 자식에게 전달) → 제거
 
-각 최적화 후 테스트 실행.
+각 최적화 후 단위 테스트 실행 (E2E는 Phase 5에서 최종 검증).
 
 ---
 
@@ -133,17 +169,50 @@ export default ComponentName
 - section 내부에서만 쓰는 타입이 feature.types.ts에 있으면 → section.types.ts로 이동
 ```
 
-이동 후 import 경로 업데이트 + 테스트 실행.
+이동 후 import 경로 업데이트 + 단위 테스트 실행.
+
+> **E2E 주의**: 파일을 이동하면 E2E 테스트(`e2e/[feature]/**/*.spec.ts`)의 import 경로나 selector도 영향받을 수 있습니다. E2E 파일이 존재하면 Grep으로 이동된 파일명이 E2E에서 참조되는지 확인하세요.
 
 ---
 
 ## Phase 5: 최종 GREEN 검증
 
+### 1. 단위 테스트
+
 ```bash
 npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -30
 ```
 
-**모든 테스트 PASS 확인 후 완료.**
+**모든 단위 테스트 PASS 확인.**
+
+### 2. E2E 테스트 (E2E 파일이 존재하는 경우)
+
+**2-1. E2E 파일 재확인:**
+```
+Glob: e2e/[feature]/**/*.spec.ts
+```
+
+- E2E 파일 없음 → 단위 테스트만으로 완료
+- E2E 파일 있음 → 2-2로 진행
+
+**2-2. 앱 실행 확인 + E2E 실행:**
+```bash
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3001 2>/dev/null || echo "NOT_RUNNING"
+```
+
+앱 실행 중인 경우:
+```bash
+npx playwright test e2e/[feature]/ --reporter=list 2>&1 | tail -20
+```
+
+| 결과 | 판정 | 조치 |
+|------|------|------|
+| 모든 E2E PASS | ✅ 리팩터링이 외부 동작에 영향 없음 확인 | 완료 |
+| E2E FAIL (1회차) | 🔄 flaky 가능성 | 1회 재실행 후 재판정 |
+| E2E FAIL (재실행 후) | ❌ 리팩터링이 외부 동작을 변경함 | 원복 후 원인 분석 |
+| 앱 미실행 | ⚠️ 검증 보류 | 완료 리포트에 "E2E 검증 보류 — `npm run dev` 후 수동 확인 필요" 명시 |
+
+**단위 + E2E 모든 테스트 PASS 확인 후 완료.**
 
 ---
 
@@ -160,7 +229,8 @@ npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -30
 | partner.types.ts | IPartnerRow interface 추출 (props 6개) |
 
 ### 테스트 결과
-Tests: 9 passed
+Unit Tests: 9 passed
+E2E Tests: 5 passed (또는 "E2E 없음" / "⚠️ 앱 미실행 — 수동 확인 필요")
 
 ### 파이프라인 위치
 [test-writer → RED] → [code-writer --ui → GREEN] → [refactor → 지금 여기] → [coverage-report] → [code-review]
