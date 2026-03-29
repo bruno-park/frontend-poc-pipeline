@@ -1,7 +1,7 @@
 ---
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, mcp__mcp-atlassian-nestads__jira_get_issue, mcp__mcp-atlassian-nestads__jira_add_comment, mcp__mcp-atlassian-heypoll__jira_get_issue, mcp__mcp-atlassian-heypoll__jira_add_comment
-argument-hint: [--unit|--e2e|--all] [JIRA-TICKET]
-description: TDD RED phase - planner.md + Jira AC 기반으로 실패하는 테스트를 먼저 작성하고 RED 상태를 검증합니다
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+argument-hint: [--unit|--e2e|--all] [pageComponents/[feature]/planner.md]
+description: TDD RED phase - planner.md 기반으로 실패하는 테스트를 먼저 작성하고 RED 상태를 검증합니다
 model: claude-sonnet-4-6
 ---
 
@@ -16,10 +16,10 @@ model: claude-sonnet-4-6
 ## Arguments
 
 ```
-/test-writer --unit WP-1234    → 단위 테스트만 작성 + RED 검증
-/test-writer --e2e WP-1234     → E2E 테스트만 작성 + RED 검증
-/test-writer --all WP-1234     → 단위 + E2E 순서대로 (기본값)
-/test-writer --unit            → Jira 없이 planner.md만으로
+/test-writer --unit pageComponents/partner/planner.md   → 단위 테스트만 작성 + RED 검증
+/test-writer --e2e pageComponents/partner/planner.md    → E2E 테스트만 작성 + RED 검증
+/test-writer --all pageComponents/partner/planner.md    → 단위 + E2E 순서대로 (기본값)
+/test-writer --unit                                     → planner.md 자동 탐색
 ```
 
 ---
@@ -71,24 +71,28 @@ TDD 원칙: 테스트는 구현보다 먼저 작성되어야 합니다.
 
 사용자가 계속 진행 선택 시 → 진행하되 완료 리포트에 ⚠️ 표시
 
-### 3. Jira AC 조회 (티켓 번호 있을 경우)
+### 3. planner.md에서 AC 및 테스트 컨텍스트 추출
 
-티켓 번호 파싱 (`WP-XXXX`, `NW-XXXX` 등):
+planner.md를 Read로 로드한 뒤, 다음 섹션을 순서대로 파싱:
 
-```
-mcp__mcp-atlassian-nestads__jira_get_issue(issue_key="WP-XXXX")
-```
+| 섹션 | 추출 내용 | 용도 |
+|------|---------|------|
+| **PRD Context / User Stories** | Acceptance Criteria 항목 (AC-1, AC-2...) | 테스트 케이스 매핑의 핵심 소스 |
+| **Component Details** | 컴포넌트별 Props, State, Data Fetching, UI States | 단위 테스트 대상 및 mock 구조 결정 |
+| **Validation Rules** | RULE-XX, 필드별 제약, 에러 메시지 | 폼 유효성 테스트 케이스 |
+| **URL State** | Schema (key, type, default, trigger) | URL 상태 동기화 테스트 |
+| **PRD Field → Component Mapping** | 필드-컴포넌트 매핑, RBAC 정보 | 역할별 시나리오, 조건부 렌더링 테스트 |
+| **TBD / Open Questions** | 미결 항목 | 테스트 제외 범위 명시 (완료 리포트에 기록) |
 
-응답에서 추출:
-- `description` → Acceptance Criteria 항목 파싱
-- `summary` → 기능 이름
-- AC 항목이 없으면 → planner.md의 컴포넌트 목적에서 자동 도출
+**AC가 명시적으로 없는 경우:**
+- 컴포넌트의 Purpose, Props, UI States에서 테스트 케이스를 자동 도출
+- 도출 근거를 매핑 테이블에 명시 (예: "AC 없음 → Component Purpose에서 도출")
 
 ---
 
 ## Phase 1: AC → 테스트 케이스 매핑 테이블
 
-planner.md와 Jira AC를 분석하여 테스트 케이스 목록을 먼저 계획합니다.
+planner.md의 AC, Validation Rules, Component Spec을 분석하여 테스트 케이스 목록을 먼저 계획합니다.
 
 ### 매핑 규칙
 
@@ -396,22 +400,13 @@ Tests: 9 failed, 0 passed
 3. E2E 실행: `npm run dev` 후 `npx playwright test e2e/partner/`
 ```
 
-### Jira 코멘트 업데이트 (티켓 번호 있을 경우)
-
-```
-mcp__mcp-atlassian-nestads__jira_add_comment(
-  issue_key="WP-XXXX",
-  comment="## 테스트 작성 완료 (TDD RED)\n\n단위 테스트 N개, E2E 테스트 N개 작성.\n\nAC 커버리지: N/N (100%)\nRED 상태 확인: ✅\n\n[테스트 케이스 목록]\n..."
-)
-```
-
 ---
 
 ## 합격 기준 (관리자 검증 통과 조건)
 
 | 항목 | 기준 | 확인 |
 |------|------|------|
-| AC 커버리지 | Jira AC 항목 100% 테스트로 커버 | Phase 1 매핑 테이블 |
+| AC 커버리지 | planner.md AC 항목 100% 테스트로 커버 | Phase 1 매핑 테이블 |
 | 예외 케이스 | 에러/빈 상태/권한 없음/로딩 상태 포함 | Phase 2 테스트 구조 |
 | RED 상태 | 단위 테스트 전체 FAIL (구현 코드 없음) | Phase 2 Step 3 |
 | RBAC | master/finance/CS 역할별 시나리오 포함 | Phase 1 매핑 테이블 |

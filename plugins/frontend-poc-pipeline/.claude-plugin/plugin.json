@@ -1,7 +1,7 @@
 {
   "name": "frontend-poc-pipeline",
   "description": "AI-driven frontend PoC pipeline: Figma → PRD → Branch → Screen Plan → TDD → Implementation → PR",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "author": {
     "name": "bruno-park"
   },
