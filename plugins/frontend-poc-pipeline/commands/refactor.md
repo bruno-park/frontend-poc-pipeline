@@ -53,17 +53,64 @@ npx playwright --version 2>&1 | head -1
 - 버전 출력됨 → 2-3으로 진행
 - 에러 (미설치) → 사용자에게 알림: "Playwright가 설치되지 않았습니다. `npx playwright install`로 설치하거나, E2E 검증 없이 진행합니다." → 단위 테스트만으로 진행
 
-**2-3. 앱 실행 여부 확인:**
+**2-3. 앱 포트 자동 감지:**
+
+다음 순서로 프로젝트 설정에서 포트를 감지합니다 (처음 찾은 값 사용):
+
 ```bash
-curl -s -o /dev/null -w "%{http_code}" http://localhost:3001 2>/dev/null || echo "NOT_RUNNING"
+# 1순위: playwright.config.ts — webServer.url 또는 use.baseURL
+grep -E "(baseURL|url).*localhost" playwright.config.ts 2>/dev/null | grep -oE '[0-9]{4,5}' | head -1
+
+# 2순위: package.json — dev 스크립트의 -p 옵션
+node -e "const s=require('./package.json').scripts?.dev||'';const m=s.match(/-p\s*(\d+)/);console.log(m?m[1]:'')" 2>/dev/null
+
+# 3순위: .env.local 또는 .env — PORT 환경변수
+grep -E "^PORT=" .env.local .env 2>/dev/null | head -1 | cut -d= -f2
+
+# 4순위: README.md — "localhost:XXXX" 패턴
+grep -oE 'localhost:[0-9]{4,5}' README.md 2>/dev/null | head -1 | cut -d: -f2
+
+# 위 모두 없으면 → 3000 (Next.js 기본값)
+```
+
+dev 커맨드도 `package.json scripts.dev` 존재 여부로 감지합니다:
+
+```bash
+DEV_CMD=$(node -e "const p=require('./package.json');console.log(p.scripts?.dev?'yarn dev':'npx next dev')" 2>/dev/null || echo "npx next dev")
+```
+
+**2-4. 앱 실행 여부 확인 및 자동 기동:**
+
+```bash
+APP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$APP_PORT 2>/dev/null || echo "NOT_RUNNING")
 ```
 
 | 결과 | 조치 |
 |------|------|
-| HTTP 200 (앱 실행 중) | Playwright 실행으로 GREEN 확인 (필수) |
-| NOT_RUNNING (앱 미실행) | 사용자에게 안내: "`npm run dev` 후 E2E 검증이 필요합니다." → 완료 리포트에 "E2E 검증 보류" 명시 |
+| HTTP 200 (앱 실행 중) | 2-5로 진행 (E2E 실행) |
+| NOT_RUNNING | **자동 기동 시도** → 아래 절차 실행 |
 
-**2-4. E2E GREEN 확인 (앱 실행 중인 경우):**
+**앱 자동 기동 절차 (NOT_RUNNING인 경우):**
+
+```bash
+# background로 기동
+$DEV_CMD &
+DEV_PID=$!
+
+# 최대 60초 대기 (2초 간격 폴링)
+for i in $(seq 1 30); do
+  curl -s http://localhost:$APP_PORT > /dev/null 2>&1 && break
+  sleep 2
+done
+
+# 기동 결과 확인
+curl -s -o /dev/null -w "%{http_code}" http://localhost:$APP_PORT
+```
+
+- 기동 성공 (HTTP 200) → 2-5로 진행, E2E 완료 후 `kill $DEV_PID`로 종료
+- 기동 실패 (60초 초과) → 사용자에게 안내: "앱 기동에 실패했습니다. 수동으로 `$DEV_CMD` 실행 후 재시도해주세요." → E2E 검증 보류로 완료
+
+**2-5. E2E GREEN 확인:**
 ```bash
 npx playwright test e2e/[feature]/ --reporter=list 2>&1 | tail -20
 ```
@@ -195,14 +242,19 @@ Glob: e2e/[feature]/**/*.spec.ts
 - E2E 파일 없음 → 단위 테스트만으로 완료
 - E2E 파일 있음 → 2-2로 진행
 
-**2-2. 앱 실행 확인 + E2E 실행:**
+**2-2. 앱 포트 감지 및 실행 확인:**
+
+Phase 0 Step 2-3과 동일한 순서로 포트 및 dev 커맨드를 감지합니다 (playwright.config.ts → package.json → .env → README.md → 3000).
+
 ```bash
-curl -s -o /dev/null -w "%{http_code}" http://localhost:3001 2>/dev/null || echo "NOT_RUNNING"
+APP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$APP_PORT 2>/dev/null || echo "NOT_RUNNING")
 ```
 
-앱 실행 중인 경우:
+NOT_RUNNING인 경우 Phase 0과 동일하게 자동 기동을 시도합니다 (`$DEV_CMD &` → 폴링 대기).
+
 ```bash
 npx playwright test e2e/[feature]/ --reporter=list 2>&1 | tail -20
+# E2E 완료 후 자동 기동한 경우: kill $DEV_PID
 ```
 
 | 결과 | 판정 | 조치 |
@@ -210,7 +262,7 @@ npx playwright test e2e/[feature]/ --reporter=list 2>&1 | tail -20
 | 모든 E2E PASS | ✅ 리팩터링이 외부 동작에 영향 없음 확인 | 완료 |
 | E2E FAIL (1회차) | 🔄 flaky 가능성 | 1회 재실행 후 재판정 |
 | E2E FAIL (재실행 후) | ❌ 리팩터링이 외부 동작을 변경함 | 원복 후 원인 분석 |
-| 앱 미실행 | ⚠️ 검증 보류 | 완료 리포트에 "E2E 검증 보류 — `npm run dev` 후 수동 확인 필요" 명시 |
+| 기동 실패 | ⚠️ 검증 보류 | 완료 리포트에 "E2E 검증 보류 — 수동 기동 후 재시도 필요" 명시 |
 
 **단위 + E2E 모든 테스트 PASS 확인 후 완료.**
 
