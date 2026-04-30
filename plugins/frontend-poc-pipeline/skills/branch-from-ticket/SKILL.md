@@ -5,6 +5,9 @@ description: Jira 티켓 번호로 브랜치를 자동 생성합니다. prefix(f
 
 # Branch from Ticket
 
+> **Prerequisites:** `mcp-atlassian` MCP가 설정되어 있어야 합니다.
+> 미설정 시 `.mcp.json`의 해당 서버 env 값을 채우고 Claude Code를 재시작하세요.
+
 Jira 티켓 번호를 받아 `feature/partner-list-WP-8118` 형식의 브랜치를 자동 생성합니다.
 
 ## 사용법

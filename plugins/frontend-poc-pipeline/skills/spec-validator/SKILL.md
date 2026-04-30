@@ -5,6 +5,9 @@ description: "Figma 화면기획서의 description(no/title/setup/rules) 내용�
 
 # 기획서 디스크립션 검증기 (spec-validator)
 
+> **Prerequisites:** `figma` MCP가 설정되어 있어야 합니다.
+> 미설정 시 `.mcp.json`의 해당 서버 env 값을 채우고 Claude Code를 재시작하세요.
+
 Figma 화면기획서의 description을 "기획서 디스크립션 정책"에 맞게 검증합니다.
 **load**, **validate**, **guide** 세 가지 모드로 동작하며, Confluence 접근 불가 시 로컬 fallback을 자동 사용합니다.
 

@@ -5,6 +5,9 @@ description: planner.md와 Jira AC를 기반으로 Playwright E2E 테스트를 T
 
 # E2E Test Generator (TDD - Playwright)
 
+> **Prerequisites:** `playwright` MCP가 설정되어 있어야 합니다.
+> 미설정 시 `.mcp.json`의 해당 서버 env 값을 채우고 Claude Code를 재시작하세요.
+
 `planner.md`와 Jira 수용 기준을 기반으로 **Playwright E2E 테스트를 먼저 작성**합니다.
 프로젝트의 `agents/` 디렉토리에 있는 Playwright 전용 에이전트 3종을 체이닝합니다.
 

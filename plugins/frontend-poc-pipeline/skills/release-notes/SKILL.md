@@ -5,6 +5,9 @@ description: git log와 Jira 완료 티켓을 분석해 릴리즈 노트를 자�
 
 # Release Notes — 릴리즈 노트 자동 생성
 
+> **Prerequisites:** `mcp-atlassian` MCP가 설정되어 있어야 합니다.
+> 미설정 시 `.mcp.json`의 해당 서버 env 값을 채우고 Claude Code를 재시작하세요.
+
 머지된 브랜치의 커밋 로그와 Jira 완료 티켓을 분석하여 사람이 읽기 좋은 릴리즈 노트를 생성합니다.
 
 ## 트리거

@@ -1,0 +1,63 @@
+{
+  "mcpServers": {
+    "apidog": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "apidog-mcp-server@latest",
+        "--project-id=<project-id>"
+      ],
+      "env": {
+        "APIDOG_ACCESS_TOKEN": ""
+      }
+    },
+    "playwright": {
+      "command": "playwright-mcp",
+      "args": []
+    },
+    "bitbucket": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@aashari/mcp-server-atlassian-bitbucket"
+      ],
+      "env": {
+        "ATLASSIAN_USER_EMAIL": "",
+        "ATLASSIAN_API_TOKEN": ""
+      }
+    },
+    "slack": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "slack-mcp-server@latest",
+        "--transport",
+        "stdio"
+      ],
+      "env": {
+        "SLACK_MCP_XOXC_TOKEN": "",
+        "SLACK_MCP_XOXD_TOKEN": ""
+      }
+    },
+    "figma": {
+      "type": "http",
+      "url": "http://127.0.0.1:3845/mcp"
+    },
+    "mcp-atlassian": {
+      "command": "uvx",
+      "args": [
+        "--with",
+        "fakeredis==2.34.1",
+        "mcp-atlassian"
+      ],
+      "env": {
+        "JIRA_URL": "",
+        "JIRA_USERNAME": "",
+        "JIRA_API_TOKEN": "",
+        "CONFLUENCE_URL": "",
+        "CONFLUENCE_USERNAME": "",
+        "CONFLUENCE_API_TOKEN": ""
+      }
+    }
+  }
+}

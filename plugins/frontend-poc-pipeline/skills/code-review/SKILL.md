@@ -5,6 +5,9 @@ description: "코드 리뷰를 수행합니다. 로컬 브랜치 diff 분석 또
 
 # Code Review
 
+> **Prerequisites:** `bitbucket` MCP가 설정되어 있어야 합니다.
+> 미설정 시 `.mcp.json`의 해당 서버 env 값을 채우고 Claude Code를 재시작하세요.
+
 로컬 브랜치 변경 사항 또는 Bitbucket PR을 분석하여 컨벤션 위반, 버그, 설계 문제를 리뷰합니다.
 
 ## 사용법

@@ -9,6 +9,9 @@ description: >
 
 # Pull Request Description Generator
 
+> **Prerequisites:** `bitbucket`, `mcp-atlassian` MCP가 설정되어 있어야 합니다.
+> 미설정 시 `.mcp.json`의 해당 서버 env 값을 채우고 Claude Code를 재시작하세요.
+
 Generate a comprehensive but concise pull request description by comparing the current branch with the specified target branch (default: `main`).
 
 ## Auto-Trigger Conditions

@@ -5,6 +5,9 @@ description: vitest 단위 테스트 + Playwright E2E 커버리지를 실행하�
 
 # Coverage Report
 
+> **Prerequisites:** `mcp-atlassian` MCP가 설정되어 있어야 합니다.
+> 미설정 시 `.mcp.json`의 해당 서버 env 값을 채우고 Claude Code를 재시작하세요.
+
 GREEN 단계 완료 후 테스트 커버리지를 측정하고 Jira AC 합격 기준 충족 여부를 검증합니다.
 
 ## 트리거

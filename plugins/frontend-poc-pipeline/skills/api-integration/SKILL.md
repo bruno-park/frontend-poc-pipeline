@@ -5,6 +5,9 @@ description: Apidog MCP로 API 스펙을 조회하고 planner.md hooks 기반으
 
 # API Integration (Apidog MCP 기반)
 
+> **Prerequisites:** `apidog` MCP가 설정되어 있어야 합니다.
+> 미설정 시 `.mcp.json`의 해당 서버 env 값을 채우고 Claude Code를 재시작하세요.
+
 `planner.md`의 hooks/data flow 섹션을 분석하여 변경 범위를 판별하고, 필요에 따라 **새 훅 생성** 또는 **기존 데이터 구조 확장**을 수행합니다.
 
 ## 트리거

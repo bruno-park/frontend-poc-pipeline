@@ -5,6 +5,9 @@ description: "Figma UI 화면 + Figma Description 노드 + Jira 티켓을 분석
 
 # Figma + Jira → PRD 자동 생성기
 
+> **Prerequisites:** `figma`, `mcp-atlassian`, `slack` MCP가 설정되어 있어야 합니다.
+> 미설정 시 `.mcp.json`의 해당 서버 env 값을 채우고 Claude Code를 재시작하세요.
+
 Figma **UI 화면 노드**와 **Description(기획 의도) 노드**를 각각 읽어,
 User Stories + Functional Spec + AI-friendly 조건문으로 구성된 PRD를 작성하고 Jira 티켓에 업로드합니다.
 

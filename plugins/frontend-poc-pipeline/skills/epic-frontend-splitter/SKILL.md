@@ -5,6 +5,9 @@ description: "에픽 Jira 티켓에서 프론트엔드 전용 작업을 AI로 �
 
 # Epic Frontend Splitter — 에픽 → 프론트엔드 하위 티켓 자동 생성
 
+> **Prerequisites:** `mcp-atlassian`, `figma` MCP가 설정되어 있어야 합니다.
+> 미설정 시 `.mcp.json`의 해당 서버 env 값을 채우고 Claude Code를 재시작하세요.
+
 여러 파트(Backend, Frontend, Deliverer, SDK)가 혼재된 에픽 티켓에서
 **프론트엔드 전용 작업만 AI로 추출**하여 화면 단위 하위 Jira 티켓을 생성합니다.
 각 티켓의 PRD는 `figma-jira-prd` 양식으로 자동 작성됩니다.
