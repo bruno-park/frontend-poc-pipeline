@@ -221,6 +221,11 @@ for l in labels:
 4. **AI-friendly**: 조건은 IF/THEN/ELSE, Validation은 코드 블록으로 명시
 5. **User Story**: As a / I want to / So that + Acceptance Criteria
 6. **spec-validator 정책 준수**: Step 2에서 로드한 정책 기준으로 description 작성
+7. **[INFERRED] 태그**: Figma Description 노드 없이 UI 화면만으로 추론한 항목은 `[INFERRED]` 태그를 붙인다. Description에서 직접 확인된 내용은 태그 없이 작성한다.
+   - 4-2 필드 정의: 비고 컬럼에 `[INFERRED]` 표기
+   - 4-3 상태 조건: `[INFERRED] IF ...` 형식
+   - 섹션 5 Validation Rules: `[INFERRED] CONSTRAINT: ...` 형식
+   - 섹션 7 API Hints: 비고 컬럼에 `[INFERRED]` 표기
 
 ### PRD 양식
 
@@ -448,12 +453,16 @@ Input: Figma Description 노드에서 추출한 no/title/setup/rules 테이블
 [ ] 섹션 7 API Hints에 엔드포인트가 최소 1개 이상 명시되어 있는가?
 [ ] 섹션 8 spec-validator 검증 결과가 기록되어 있는가?
 [ ] AI가 조건만 읽고 구현 가능할 수준으로 모호한 표현이 없는가?
+[ ] [INFERRED] 태그가 붙은 추론 항목이 정확히 태깅되어 있는가?
 ```
 
 미충족 항목이 있으면 보완 후 재검증합니다.
 
 > **TBD 항목이 3개 이상인 경우** 사용자에게 알림:
 > "미결 항목이 {N}개 있습니다. PRD를 업로드하시겠습니까? (TBD 항목은 개발 착수 전 확인 필요)"
+>
+> **[INFERRED] 항목이 5개 이상인 경우** 사용자에게 알림:
+> "추론 항목이 {N}개입니다. Figma Description 노드를 추가하면 정확도가 높아집니다."
 
 ---
 
@@ -488,6 +497,10 @@ Tool: mcp-atlassian-*:jira_update_issue
 - 핵심 인터랙션: {IF/THEN 조건 개수}개
 - Validation Rules: {개수}개
 - spec-validator: {통과/경고 N개/오류 N개}
+
+📊 데이터 소스:
+- Figma Description 확인 항목: {N}개
+- [INFERRED] 추론 항목: {N}개  ← 개발 착수 전 검토 권장
 
 🌿 브랜치: {브랜치명} (신규 생성 / 기존 사용)
 
