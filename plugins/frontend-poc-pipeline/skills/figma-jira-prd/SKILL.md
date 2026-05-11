@@ -211,6 +211,27 @@ for l in labels:
 
 ---
 
+## Step 2.5: Inference Gate
+
+Description 노드 텍스트에서 아래 키워드를 스캔한다:
+- `기존과 동일`, `기존동일`, `변경 없음`, `동일`
+
+```
+IF 키워드 발견 AND Jira description에 기존 PRD가 존재
+THEN:
+  - PRD 재작성 생략 (Step 3 스킵)
+  - 출력: "⚠️ Description '기존과 동일' 감지 → PRD 재작성 생략. 기존 PRD 유효성 검증을 진행합니다."
+  - Jira 자동 업로드 없음
+  - Step 5(figma-prd-validator)는 반드시 실행: 기존 Jira PRD vs Figma 갭 검증
+  - Gap Report 출력 후 사용자에게 확인: "수정이 필요한 항목이 있습니다. PRD를 업데이트할까요?"
+ELSE:
+  - 기존 워크플로우 진행 (Step 3~7)
+```
+
+> Description 노드가 없는 경우: 기존 워크플로우 진행
+
+---
+
 ## Step 3: PRD 작성
 
 ### 작성 원칙
@@ -221,7 +242,9 @@ for l in labels:
 4. **AI-friendly**: 조건은 IF/THEN/ELSE, Validation은 코드 블록으로 명시
 5. **User Story**: As a / I want to / So that + Acceptance Criteria
 6. **spec-validator 정책 준수**: Step 2에서 로드한 정책 기준으로 description 작성
-7. **[INFERRED] 태그**: Figma Description 노드 없이 UI 화면만으로 추론한 항목은 `[INFERRED]` 태그를 붙인다. Description에서 직접 확인된 내용은 태그 없이 작성한다.
+7. **[INFERRED] 태그**: Step 2.5 inference_mode에 따라 결정한다.
+   - `ALLOWED`: Figma Description 노드 없이 UI 화면만으로 추론한 항목에 `[INFERRED]` 태그를 붙인다. Description에서 직접 확인된 내용은 태그 없이 작성한다.
+   - `STRICT`: `[INFERRED]` 태그 사용 금지. UI 화면 단독 분석으로 새 항목 추가 금지. Description에서 확인된 내용만 작성한다.
    - 4-2 필드 정의: 비고 컬럼에 `[INFERRED]` 표기
    - 4-3 상태 조건: `[INFERRED] IF ...` 형식
    - 섹션 5 Validation Rules: `[INFERRED] CONSTRAINT: ...` 형식
@@ -396,7 +419,9 @@ RULE-01: {규칙명}
 
 ---
 
-## 8. spec-validator 검증 결과
+## 8. 검증 결과
+
+### 8-1. spec-validator (Description 태그 정책)
 
 > Step 4에서 자동 실행된 spec-validator 결과를 여기에 기록합니다.
 
@@ -410,6 +435,21 @@ RULE-01: {규칙명}
 | [Data] 구조 | 통과/오류 | {위반 항목} |
 | setup 태그 금지 | 통과/오류 | {위반 항목} |
 | 전체 | **통과/오류/경고** | {요약} |
+
+### 8-2. Figma ↔ PRD Gap Check
+
+> Step 5에서 자동 실행된 figma-prd-validator 결과를 여기에 기록합니다.
+
+| 카테고리 | Figma | PRD | 일치 | 누락→자동수정 | 초과 |
+|---|---|---|---|---|---|
+| 테이블 컬럼 | - | - | - | - | - |
+| 필드 | - | - | - | - | - |
+| 버튼/CTA | - | - | - | - | - |
+| 상태 조건 | - | - | - | - | - |
+
+**종합 판정**: ✅ 통과 / ⚠️ 경고 / ❌ 오류  
+**자동 수정 항목**: {N}개 `[AUTO-FIXED from Figma]`  
+**잔여 TBD**: {N}개
 ```
 
 ---
@@ -427,49 +467,98 @@ Input: Figma Description 노드에서 추출한 no/title/setup/rules 테이블
 
 | 결과 | 처리 방법 |
 |---|---|
-| 모두 통과 | PRD 섹션 8에 "전체 통과" 기록, Step 5로 진행 |
-| 경고 발생 | PRD 섹션 8에 경고 항목 기록, 사용자에게 알림 후 진행 |
-| 오류 발생 | PRD 섹션 8에 오류 항목 기록, 오류 내용과 수정 제안 출력 후 사용자 확인 |
+| 모두 통과 | PRD 섹션 8-1에 "전체 통과" 기록, Step 5로 진행 |
+| 경고 발생 | PRD 섹션 8-1에 경고 항목 기록, 사용자에게 알림 후 진행 |
+| 오류 발생 | PRD 섹션 8-1에 오류 항목 기록, 오류 내용과 수정 제안 출력 후 사용자 확인 |
 
 > Figma Description 노드가 없는 경우 이 단계를 건너뜁니다.
 
 ---
 
-## Step 5: PRD 자체 검증 (Quality Gate)
+## Step 5: Figma ↔ PRD 갭 검증 및 자동 수정
 
 ```
-[ ] Figma UI URL과 Description URL이 References에 각각 명시되어 있는가?
-[ ] User Story가 최소 1개 이상, Acceptance Criteria가 각 스토리에 있는가?
-[ ] 필드 정의 테이블에 [R]/[E] 편집 구분이 모든 필드에 명시되어 있는가?
-[ ] 조건부 필드(예: disable 조건 있는 필드)의 기본 상태와 조건 후 상태가 모두 명시되어 있는가?
-[ ] 상태 변경 인터랙션이 IF/THEN/ELSE 형식으로 기술되어 있는가?
-[ ] 취소 버튼 동작(모달 여부, 이동 대상)이 4-4에 명시되어 있는가?
-[ ] 저장 성공/실패 후 플로우(4-5)가 명시되어 있는가?
-[ ] 모든 필드에 대한 Validation Rule이 있는가? (선택 필드는 "없음"으로라도 명시)
-[ ] Validation Rules의 에러 메시지 텍스트가 구체적으로 기재되어 있는가?
-[ ] 의존 모달/페이지가 Dependencies에 기재되어 있는가?
-[ ] TBD 항목이 있는 경우 Dependencies에 "[TBD]"로 명시되어 있는가?
-[ ] 섹션 7 Implementation Hints에 페이지 타입, feature 디렉토리명, URL State 여부가 채워져 있는가?
-[ ] 섹션 7 API Hints에 엔드포인트가 최소 1개 이상 명시되어 있는가?
-[ ] 섹션 8 spec-validator 검증 결과가 기록되어 있는가?
-[ ] AI가 조건만 읽고 구현 가능할 수준으로 모호한 표현이 없는가?
-[ ] [INFERRED] 태그가 붙은 추론 항목이 정확히 태깅되어 있는가?
+IF Figma UI URL이 없는 경우 (Jira URL만 입력)
+THEN 이 단계를 건너뛴다
 ```
 
-미충족 항목이 있으면 보완 후 재검증합니다.
+그 외의 경우 `/figma-prd-validator`를 실행한다.
 
-> **TBD 항목이 3개 이상인 경우** 사용자에게 알림:
-> "미결 항목이 {N}개 있습니다. PRD를 업로드하시겠습니까? (TBD 항목은 개발 착수 전 확인 필요)"
->
-> **[INFERRED] 항목이 5개 이상인 경우** 사용자에게 알림:
-> "추론 항목이 {N}개입니다. Figma Description 노드를 추가하면 정확도가 높아집니다."
+### PRD 소스 선택
+
+| 케이스 | PRD 입력 소스 |
+|---|---|
+| 정상 흐름 (Step 3에서 PRD 작성) | Step 3에서 작성한 PRD 마크다운 전문 |
+| `기존과 동일` 감지 (Step 3 스킵) | Step 2에서 가져온 **기존 Jira PRD** 전문 |
+
+```
+입력:
+  figma: {Step 2에서 수집한 Figma UI 노드 URL}
+  prd:   {위 테이블 기준으로 선택한 PRD 전문}
+
+※ Figma 데이터는 Step 2에서 이미 수집했으므로 재호출 없이 전달한다.
+```
+
+### 결과별 자동 처리
+
+| 판정 | 처리 |
+|---|---|
+| ✅ 통과 | Gap Report를 PRD 섹션 8-2에 기록 후 Step 6으로 진행 |
+| ⚠️ 경고 | Gap 항목을 PRD 해당 섹션에 **자동 추가** 후 재검증 → 통과 시 Step 6 진행 |
+| ❌ 오류 | Gap 항목을 PRD 해당 섹션에 **자동 추가** 후 재검증 → 통과 시 Step 6 진행 |
+
+### 자동 수정 규칙
+
+Gap 항목 카테고리별 PRD 삽입 위치:
+
+| Gap 카테고리 | 자동 수정 위치 | 처리 방법 |
+|---|---|---|
+| 테이블 컬럼 누락 | 섹션 4-2 필드 정의 테이블 | 누락 컬럼을 행으로 추가, 편집 여부·타입은 UI에서 판단 |
+| 필드 누락 | 섹션 4-2 필드 정의 테이블 | 누락 필드 행 추가 |
+| 버튼/CTA 누락 | 섹션 4-4 버튼 액션 정의 | 누락 버튼 행 추가, 동작은 UI에서 판단 |
+| 상태 조건 누락 | 섹션 4-3 상태 조건 | IF/THEN 블록 추가 |
+
+> 자동 수정 항목은 비고에 `[AUTO-FIXED from Figma]` 태그를 붙인다.
+> 재검증 후에도 ❌ 오류가 남으면 해당 항목을 `[TBD]`로 표시하고 Step 6에서 사용자에게 알린다.
+
+### `기존과 동일` 케이스 자동 수정 후 업로드 규칙
+
+```
+IF 자동 수정 항목 > 0 AND 케이스 = '기존과 동일'
+THEN:
+  - 수정된 PRD 전문 출력
+  - 출력: "기존 PRD에서 {N}개 항목이 자동 수정되었습니다. Jira에 업로드할까요?"
+  - 사용자 확인 후 Step 7 진행 (자동 업로드 없음)
+
+IF 자동 수정 항목 = 0 AND 케이스 = '기존과 동일'
+THEN:
+  - 출력: "✅ 기존 PRD와 Figma가 일치합니다. 변경 없음."
+  - Step 7~8 생략
+```
 
 ---
 
 ## Step 6: 사용자 확인
 
 `바로 올려줘` 옵션이 있으면 이 단계를 건너뜁니다.
-그렇지 않으면 PRD 초안을 출력하고 수정 여부를 확인합니다.
+그렇지 않으면 PRD 초안과 Gap Report를 함께 출력하고 수정 여부를 확인합니다.
+
+```
+📄 PRD 초안 (v{N})
+[PRD 전문]
+
+---
+
+📊 Figma ↔ PRD Gap Report
+[figma-prd-validator 결과]
+※ [AUTO-FIXED] 항목: {N}개 자동 수정됨
+※ [TBD] 잔여 항목: {N}개 (개발 착수 전 확인 필요)
+
+수정하거나 그대로 Jira에 올릴까요?
+```
+
+> Step 5 재검증 후에도 [TBD]가 3개 이상 남은 경우:
+> "미결 항목이 {N}개 있습니다. PRD를 업로드하시겠습니까?"
 
 ---
 
@@ -502,6 +591,10 @@ Tool: mcp-atlassian-*:jira_update_issue
 - Figma Description 확인 항목: {N}개
 - [INFERRED] 추론 항목: {N}개  ← 개발 착수 전 검토 권장
 
+🔍 Figma ↔ PRD Gap Check:
+- 자동 수정 항목: {N}개 [AUTO-FIXED from Figma]
+- 잔여 TBD: {N}개
+
 🌿 브랜치: {브랜치명} (신규 생성 / 기존 사용)
 
 🔲 TODO / TBD (미확인 항목): {있을 경우 목록}
@@ -518,7 +611,9 @@ Tool: mcp-atlassian-*:jira_update_issue
 | Figma 결과가 너무 큰 경우 | Bash로 라벨/텍스트 추출 후 구조 파악 |
 | 기존 Jira description 존재 | 기존 내용 보존, 신규 정보만 보완 |
 | Description 노드 정보 부족 | UI 노드에서 유추, TODO로 표시 |
-| spec-validator 오류 발생 | 오류 내용을 섹션 8에 기록 + 수정 제안 출력, 사용자 확인 후 진행 |
+| Description에 `기존과 동일` 감지 | inference_mode = STRICT, [INFERRED] 금지, Description 내용만 작성 |
+| spec-validator 오류 발생 | 오류 내용을 섹션 8-1에 기록 + 수정 제안 출력, 사용자 확인 후 진행 |
+| Gap Check 자동 수정 후 재검증 실패 | 잔여 항목 [TBD]로 표시, 섹션 8-2에 기록, Step 6에서 사용자 알림 |
 | TBD 항목 3개 이상 | 업로드 전 사용자에게 확인 요청 |
 | 취소 버튼 정책 미정 | `[TBD] 취소 동작 미결`로 표시 + Dependencies에 추가 |
 | API 엔드포인트 미정 | API Hints에 `[TBD]`로 표시 |

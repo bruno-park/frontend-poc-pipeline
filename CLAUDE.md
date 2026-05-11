@@ -8,6 +8,7 @@ AI-driven frontend PoC pipeline: Figma → PRD → TDD → PR
 
 ```
 [1] figma-jira-prd         → Figma + Jira → PRD 자동 작성
+    figma-prd-validator    → Figma ↔ PRD 갭 검증 (품질 게이트)
 [2] branch-from-ticket     → Jira 티켓 기반 브랜치 생성
     screen-plan            → Figma → planner.md 화면 설계
 [3] test-writer            → TDD RED (unit + e2e 테스트 작성)
@@ -24,6 +25,7 @@ Claude Code는 `/skill-name` 명령어로 스킬을 실행합니다.
 | 명령어 | 설명 |
 |--------|------|
 | `/figma-jira-prd` | Figma UI + Jira → PRD 작성 |
+| `/figma-prd-validator` | Figma ↔ PRD 갭 검증 (누락·불일치 리포트) |
 | `/branch-from-ticket` | Jira 티켓 번호로 브랜치 생성 |
 | `/screen-plan` | Figma → planner.md 화면 설계 |
 | `/test-writer` | TDD RED: 테스트 먼저 작성 |
