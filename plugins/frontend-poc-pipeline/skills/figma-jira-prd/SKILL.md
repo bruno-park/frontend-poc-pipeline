@@ -29,7 +29,8 @@ PRD 작성해줘
 jira: https://wisebirds.atlassian.net/browse/WP-0000
 ui: https://www.figma.com/design/{fileKey}/...?node-id=0000-0000
 ```
-→ UI 노드 1개 기준으로 PRD 작성. Description 정보는 TODO 처리.
+→ 노드 내부를 자동 탐색해 Description 자식 노드를 찾으면 풀 모드로 처리.
+  Description을 찾지 못한 경우에만 TODO 처리.
 
 ---
 
@@ -121,7 +122,8 @@ https://www.figma.com/design/.../...?node-id=   ← Figma Description (선택)
 | `figma.com` (첫 번째) | Figma UI 화면 노드 |
 | `figma.com` (두 번째) | Figma Description 노드 |
 
-> Figma URL이 1개면 노드 내용을 먼저 확인해 UI / Description 역할을 판단합니다.
+> Figma URL이 1개면 Step 2에서 노드 내부를 탐색해 Description 자식 노드를 자동 감지합니다.
+> 감지 성공 시 풀 모드(UI + Description 분리), 실패 시 UI 전용 모드로 fallback합니다.
 > `jira:`, `ui:`, `description:` 키가 있으면 키 우선, 없으면 순서 기준으로 자동 배정합니다.
 
 ### Figma URL → 파라미터 추출
@@ -169,6 +171,10 @@ git branch -a | grep -i "{ISSUE_KEY}"
 
 ## Step 2: 병렬 데이터 수집 + spec-validator 정책 로드
 
+### Figma URL 개수에 따른 수집 전략
+
+#### [풀 모드] Figma URL 2개 제공 시
+
 아래 4가지를 **동시에** 호출합니다:
 
 ```
@@ -180,17 +186,62 @@ git branch -a | grep -i "{ISSUE_KEY}"
 2. Figma:get_design_context  ← UI 화면 노드
    fileKey: {fileKey}
    nodeId:  {UI_nodeId}
-   clientFrameworks: unknown
-   clientLanguages:  unknown
 
 3. Figma:get_design_context  ← Description 노드
    fileKey: {fileKey}
    nodeId:  {DESC_nodeId}
-   clientFrameworks: unknown
-   clientLanguages:  unknown
 
 4. spec-validator guide       ← 디스크립션 정책 컨텍스트 로드
-   → 반환된 [F]/[P]/[Data] 정책 규칙을 Step 3 PRD 작성에 주입
+```
+
+#### [단일 노드 모드] Figma URL 1개 제공 시
+
+**3단계로 처리합니다 (구조 파악 → 탐색 → 상세 파싱):**
+
+**Phase A — 노드 구조 파악** (Jira + Figma metadata + spec-validator 병렬):
+```
+[병렬 실행]
+1. mcp-atlassian-*:jira_get_issue
+2. Figma:get_metadata  ← 제공된 단일 노드 전체 트리 구조 파악 (저비용)
+   nodeId: {nodeId}
+   ※ get_design_context 가 아닌 get_metadata 사용 — 자식 노드 목록 파악이 목적
+3. spec-validator guide
+```
+
+**Phase B — Description 자식 노드 자동 탐색:**
+
+`get_metadata` 응답의 자식 노드 목록에서 다음 패턴을 순서대로 스캔한다:
+
+| 우선순위 | 감지 기준 | 예시 |
+|---|---|---|
+| 1 | 노드명이 `description`, `desc`, `디스크립션`, `기획`, `기획서`, `spec` 포함 (대소문자 무관) | `"Description"`, `"기획서_v2"` |
+| 2 | 텍스트 내에 `[F]`, `[P]`, `[Data]` 태그가 1개 이상 포함 | `[F] 버튼 클릭 시...` |
+| 3 | `no`, `title`, `setup`, `rules` 컬럼 구조가 테이블 형태로 존재 | spec-validator 검증 대상 테이블 |
+
+```
+IF Description 자식 노드 감지 성공
+THEN:
+  - UI 노드: 제공된 노드에서 Description 자식을 제외한 나머지 프레임
+  - Description 노드: 감지된 자식 노드 ID → Phase C로 진행
+  - inference_mode = FULL  ← [INFERRED] 태그 사용 안 함
+  - References에 기록: Description (Figma) | {원본 URL}#auto-detected:{desc_node_id}
+
+IF Description 자식 노드 감지 실패
+THEN:
+  - 전체 노드를 UI로 처리 (get_metadata 결과 그대로 사용)
+  - inference_mode = ALLOWED  ← [INFERRED] 태그 허용
+  - References에 기록: Description (Figma) | [자동 탐색 결과 없음 — 수동 URL 제공 권장]
+  - Phase C 생략, Step 2.5로 진행
+```
+
+**Phase C — Description 노드 상세 파싱** (감지 성공 시에만):
+```
+Figma:get_design_context  ← 감지된 Description 자식 노드만 (저비용)
+  nodeId: {desc_node_id}
+
+※ UI 노드에 대한 get_design_context는 호출하지 않는다.
+  PRD 작성에는 get_metadata로 얻은 필드명/구조 정보로 충분하다.
+  get_design_context는 Description 텍스트([F]/[P]/[Data] 규칙) 파싱에만 사용한다.
 ```
 
 Figma 결과가 너무 커서 파일로 저장되면 Bash로 핵심 노드명/텍스트만 추출합니다:
@@ -242,8 +293,9 @@ ELSE:
 4. **AI-friendly**: 조건은 IF/THEN/ELSE, Validation은 코드 블록으로 명시
 5. **User Story**: As a / I want to / So that + Acceptance Criteria
 6. **spec-validator 정책 준수**: Step 2에서 로드한 정책 기준으로 description 작성
-7. **[INFERRED] 태그**: Step 2.5 inference_mode에 따라 결정한다.
-   - `ALLOWED`: Figma Description 노드 없이 UI 화면만으로 추론한 항목에 `[INFERRED]` 태그를 붙인다. Description에서 직접 확인된 내용은 태그 없이 작성한다.
+7. **[INFERRED] 태그**: Step 2 및 Step 2.5 inference_mode에 따라 결정한다.
+   - `FULL`: Figma URL 1개에서 Description 자식 노드를 자동 감지 성공. `[INFERRED]` 태그 사용 안 함. 풀 모드와 동일하게 처리.
+   - `ALLOWED`: Description 노드를 찾지 못해 UI 화면만으로 추론한 항목에 `[INFERRED]` 태그를 붙인다. Description에서 직접 확인된 내용은 태그 없이 작성한다.
    - `STRICT`: `[INFERRED]` 태그 사용 금지. UI 화면 단독 분석으로 새 항목 추가 금지. Description에서 확인된 내용만 작성한다.
    - 4-2 필드 정의: 비고 컬럼에 `[INFERRED]` 표기
    - 4-3 상태 조건: `[INFERRED] IF ...` 형식
@@ -606,7 +658,9 @@ Tool: mcp-atlassian-*:jira_update_issue
 
 | 상황 | 처리 방법 |
 |---|---|
-| Figma URL 1개만 제공 | 노드 역할 판단 후 가능한 범위에서 PRD 작성 |
+| Figma URL 1개만 제공 | Step 2 Phase B에서 자식 노드 자동 탐색 → 감지 성공 시 FULL 모드, 실패 시 ALLOWED 모드 fallback |
+| Figma MCP 도구 미등록 (세션 초기화 미반영) | 사용자에게 안내: "Figma 파일을 Dev Mode로 열고 `/mcp` 명령으로 재연결 후 다시 시도해 주세요" |
+| Figma MCP 도구 있으나 서버 미응답 | Figma 데스크탑 앱 실행 여부 확인 안내 후 대기. Description URL 직접 제공 옵션 제시 |
 | Jira URL 없음 | PRD만 작성하여 출력, 업로드 생략 |
 | Figma 결과가 너무 큰 경우 | Bash로 라벨/텍스트 추출 후 구조 파악 |
 | 기존 Jira description 존재 | 기존 내용 보존, 신규 정보만 보완 |

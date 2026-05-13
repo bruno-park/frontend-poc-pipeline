@@ -13,5 +13,38 @@
       "/Users/wisebirds/WebstormProjects/poc/frontend-poc-pipeline/pageComponents"
     ]
   },
-  "enabledPlugins": {}
+  "enabledPlugins": {},
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__figma-dev-mode-mcp-server__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/wisebirds/WebstormProjects/poc/frontend-poc-pipeline/.claude/hooks/figma-check.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__mcp-atlassian-nestads__jira_update_issue",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/wisebirds/WebstormProjects/poc/frontend-poc-pipeline/.claude/hooks/prd-gate.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__mcp-atlassian-nestads__jira_update_issue",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/wisebirds/WebstormProjects/poc/frontend-poc-pipeline/.claude/hooks/prd-log.sh"
+          }
+        ]
+      }
+    ]
+  }
 }
