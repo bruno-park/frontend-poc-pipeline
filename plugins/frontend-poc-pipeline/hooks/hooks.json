@@ -1,0 +1,36 @@
+{
+  "description": "frontend-poc-pipeline 보조 훅: Figma MCP 가용성 점검 + Jira PRD 업로드 게이트/로그",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__figma-dev-mode-mcp-server__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/figma-check.sh\""
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__mcp-atlassian-.*__jira_update_issue",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/prd-gate.sh\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__mcp-atlassian-.*__jira_update_issue",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/prd-log.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}
