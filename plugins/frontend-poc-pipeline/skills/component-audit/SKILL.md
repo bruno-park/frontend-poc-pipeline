@@ -113,7 +113,7 @@ axios.post<any> → axios.post<IResponseType>
 ```
 
 사용자에게 수정 여부 확인 후:
-- **승인** → Edit tool로 자동 수정
+- **승인** → 파일을 직접 편집해 자동 수정
 - **거절** → 목록만 저장
 
 ---

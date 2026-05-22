@@ -133,7 +133,11 @@ Figma 화면기획서의 description을 "기획서 디스크립션 정책"에 �
 ```
 
 > **내장 규칙 자체가 없을 경우 (비상 fallback):**
-> 로컬 파일 읽기: `/Users/wisebirds/.claude/skills/spec-validator/policy-fallback.md`
+> 다음 후보 경로를 순서대로 시도하고, 처음 존재하는 파일을 읽는다:
+> 1. `plugins/frontend-poc-pipeline/skills/spec-validator/policy-fallback.md` (프로젝트 로컬, 권장)
+> 2. `$SPEC_VALIDATOR_POLICY_FALLBACK` 환경변수가 가리키는 경로
+> 3. `~/.claude/skills/spec-validator/policy-fallback.md` (Claude Code 사용자 디렉터리)
+> 4. `~/.codex/skills/spec-validator/policy-fallback.md` / `~/.gemini/skills/spec-validator/policy-fallback.md`
 
 ---
 

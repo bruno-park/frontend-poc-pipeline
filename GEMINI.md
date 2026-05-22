@@ -45,6 +45,7 @@
 | 트리거 패턴 | SKILL.md 경로 |
 |------------|---------------|
 | `/figma-jira-prd`, `PRD 작성`, `기획서 작성`, `유저 스토리 뽑아줘`, `기능 요구사항`, figma URL + jira URL 동시 제공 | `plugins/frontend-poc-pipeline/skills/figma-jira-prd/SKILL.md` |
+| `/figma-prd-validator`, `PRD 검증`, `Figma랑 PRD 맞는지`, `figma prd 차이`, `prd 누락 항목` | `plugins/frontend-poc-pipeline/skills/figma-prd-validator/SKILL.md` |
 | `/branch-from-ticket`, `브랜치 만들어`, `브랜치 생성`, jira 티켓번호 + 브랜치 | `plugins/frontend-poc-pipeline/skills/branch-from-ticket/SKILL.md` |
 | `/unit-test-gen`, `단위 테스트 작성`, `유닛 테스트`, `TDD RED`, `테스트 먼저` | `plugins/frontend-poc-pipeline/skills/unit-test-gen/SKILL.md` |
 | `/api-integration`, `API 훅 만들어`, `React Query 훅`, `API 연동` | `plugins/frontend-poc-pipeline/skills/api-integration/SKILL.md` |
