@@ -10,6 +10,14 @@
 - `.github/workflows/validate.yml` — push/PR 시 검증기 + `shellcheck --severity=error` 자동 실행.
 - harness 메타-스킬 기반 운영 하네스 — `.claude/agents/`에 에이전트 3명(skill-architect, routing-syncer, marketplace-validator), `.claude/skills/marketplace-stewardship/`에 오케스트레이터 스킬. CLAUDE.md에 하네스 포인터 + 변경 이력 등록. 마켓플레이스 자산 자체는 무변경 (공존 노선).
 
+### Changed
+- `/workflow` 가이드 정합화 — broken reference 5종 제거 및 누락 자산 보강:
+  - `/planner` → `/screen-plan` 이름 통일 (실제 슬래시 커맨드명 기준).
+  - 자산 없는 4종(`/confluence-update`, `/bug-report`, `/build-fix`, `/security-review`) 삭제. Phase 10 → Phase 9로 축소(총 11 → 10 Phases).
+  - Phase 0 품질 게이트에 `/spec-validator`, `/figma-prd-validator` 명시 (README와 일관).
+  - 부가 커맨드에 `/epic-frontend-splitter` 등록.
+  - frontmatter `allowed-tools`의 `mcp-atlassian-nestads` 하드코드를 `mcp-atlassian-*` 패턴으로 일반화하여 헤이폴/Tillion 등 다른 인스턴스 사용자도 prompt 없이 동작.
+
 ## [0.6.0] - 2026-05-21
 
 ### Changed

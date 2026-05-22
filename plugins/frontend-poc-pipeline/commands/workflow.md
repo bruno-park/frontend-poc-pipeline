@@ -1,5 +1,5 @@
 ---
-allowed-tools: Read, Glob, Grep, Bash, mcp__mcp-atlassian-nestads__jira_get_issue, mcp__mcp-atlassian-nestads__jira_get_issue_development_info
+allowed-tools: Read, Glob, Grep, Bash, mcp__mcp-atlassian-*__jira_get_issue, mcp__mcp-atlassian-*__jira_get_issue_development_info
 argument-hint: [JIRA-TICKET] [--status] [--hotfix]
 description: AI 개발 파이프라인 가이드 — 현재 단계를 진단하고 다음 커맨드를 안내합니다
 model: claude-sonnet-4-6
@@ -20,12 +20,14 @@ model: claude-sonnet-4-6
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                  STANDARD PIPELINE (11 Phases)                      │
+│                  STANDARD PIPELINE (10 Phases)                      │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
 │  [0] PRD          figma-jira-prd        Figma+Jira → AC 작성        │
+│       ↳ (선택) spec-validator        Figma description 정책 검증      │
+│       ↳ (선택) figma-prd-validator   PRD ↔ Figma Gap Report         │
 │  [1] 브랜치        branch-from-ticket    feature 브랜치 생성          │
-│  [2] 화면 설계     /planner              planner.md 생성             │
+│  [2] 화면 설계     /screen-plan           planner.md 생성             │
 │                                                                     │
 │  ┌──────────────────────────────┐                                   │
 │  │  [3] API 훅   api-integration │ ← 병렬 시작 가능                  │
@@ -36,8 +38,7 @@ model: claude-sonnet-4-6
 │  [6] 리팩터       /refactor             코드 정리 + 테스트 유지       │
 │  [7] 커버리지     coverage-report       ≥ 80% 달성                  │
 │  [8] 코드 리뷰    code-review           Critical 이슈 0개            │
-│  [9] 문서화       confluence-update     기술 문서 업데이트             │
-│  [10] PR 작성    pull-request-description  MR/PR 생성               │
+│  [9] PR 작성     pull-request-description  MR/PR 생성               │
 │                                                                     │
 ├─────────────────────────────────────────────────────────────────────┤
 │                  HOTFIX PIPELINE (5 Phases)                         │
@@ -62,7 +63,7 @@ model: claude-sonnet-4-6
 
 | Phase | 합격 기준 | 실패 시 |
 |-------|----------|---------|
-| **[2] planner.md** | 파일 존재 + URL State 섹션 포함 + 구현 체크리스트 완성 | `/planner` 재실행 |
+| **[2] planner.md** | 파일 존재 + URL State 섹션 포함 + 구현 체크리스트 완성 | `/screen-plan` 재실행 |
 | **[3] API 훅** | `.hook.ts` 파일 존재 + TypeScript 타입 정의 + API path 상수 export | `api-integration` 재실행 |
 | **[4] 테스트 RED** | AC 100% 커버 + 모든 테스트 FAIL + `data-testid` 없음 + RBAC 시나리오 포함 | 테스트 강화 후 재실행 |
 | **[6] 리팩터** | 단위 + E2E 모든 테스트 PASS + `console.log` 없음 + `px` 단위 없음 + 미사용 import 없음 | 리팩터 후 재실행 |
@@ -84,7 +85,7 @@ mcp__mcp-atlassian-nestads__jira_get_issue(issue_key="WP-XXXX")
 ### 2. 로컬 파일 상태 확인 (병렬 실행)
 
 ```
-Glob: pageComponents/*/planner.md           → Phase 2 완료 여부
+Glob: pageComponents/*/screen-plan.md           → Phase 2 완료 여부
 Glob: pageComponents/*/hooks/*.hook.ts      → Phase 3 완료 여부
 Glob: pageComponents/**/*.test.tsx          → Phase 4 완료 여부
 Glob: pageComponents/**/*.tsx (구현 파일)    → Phase 5 완료 여부
@@ -114,18 +115,17 @@ npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -5
 진행 현황:
   ✅ Phase 0  PRD 작성 완료 (Jira 설명 있음)
   ✅ Phase 1  브랜치 생성 (feature/WP-1234-partner-list)
-  ✅ Phase 2  화면 설계 완료 (pageComponents/partner/planner.md)
+  ✅ Phase 2  화면 설계 완료 (pageComponents/partner/screen-plan.md)
   ✅ Phase 3  API 훅 생성 완료 (usePartnerQuery.hook.ts)
   ✅ Phase 4  테스트 작성 완료 (RED 상태 확인됨)
   🔄 Phase 5  구현 중 (일부 테스트 PASS)
   ⬜ Phase 6  리팩터링 대기
   ⬜ Phase 7  커버리지 리포트 대기
   ⬜ Phase 8  코드 리뷰 대기
-  ⬜ Phase 9  문서화 대기
-  ⬜ Phase 10 PR 작성 대기
+  ⬜ Phase 9  PR 작성 대기
 
 👉 다음 단계:
-  /code-writer --ui pageComponents/partner/planner.md
+  /code-writer --ui pageComponents/partner/screen-plan.md
 ```
 
 ---
@@ -144,6 +144,12 @@ npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -5
 **산출물**: Jira 티켓에 PRD 업로드 (AC, 예외 케이스, 컴포넌트 힌트)
 
 **Quality Gate**: Jira 티켓 description에 AC 목록 존재
+
+**보강 검증 (선택):**
+- `/spec-validator` — Figma description(no/title/setup/rules) 정책 준수 확인
+- `/figma-prd-validator` — 작성된 PRD ↔ Figma 실제 설계 데이터 Gap Report (누락·불일치·TBD)
+
+> 큰 에픽으로 시작한 경우 `/epic-frontend-splitter` 로 화면 단위 하위 티켓을 먼저 분해한 뒤 각 티켓에 대해 Phase 0을 실행한다.
 
 ---
 
@@ -168,18 +174,18 @@ npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -5
 
 **커맨드**:
 ```bash
-/planner [figma-url]
-/planner [screenshot.png]
+/screen-plan [figma-url]
+/screen-plan [screenshot.png]
 ```
 
-**산출물**: `pageComponents/[feature]/planner.md`
+**산출물**: `pageComponents/[feature]/screen-plan.md`
 - 컴포넌트 트리 + props/state
 - URL State 스키마 (목록 페이지)
 - React Query 훅 계획
 - 구현 체크리스트
 - 접근성 고려사항 (인터랙티브 요소 aria, 키보드 탐색)
 
-**Quality Gate**: `pageComponents/[feature]/planner.md` 파일 존재 + URL State 섹션 포함
+**Quality Gate**: `pageComponents/[feature]/screen-plan.md` 파일 존재 + URL State 섹션 포함
 
 ---
 
@@ -238,8 +244,8 @@ npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -5
 
 **커맨드**:
 ```bash
-/code-writer --ui pageComponents/[feature]/planner.md
-/code-writer --ui pageComponents/[feature]/planner.md --mock  # API 미완성 시
+/code-writer --ui pageComponents/[feature]/screen-plan.md
+/code-writer --ui pageComponents/[feature]/screen-plan.md --mock  # API 미완성 시
 ```
 
 **내부 동작**: `ui-builder` 스킬에 위임
@@ -264,7 +270,7 @@ npx vitest run pageComponents/[feature]  # 모든 테스트 PASS
 
 **커맨드**:
 ```bash
-/refactor pageComponents/[feature]/planner.md
+/refactor pageComponents/[feature]/screen-plan.md
 ```
 
 **체크 항목**:
@@ -314,22 +320,9 @@ npx vitest run pageComponents/[feature]  # 모든 테스트 PASS
 
 ---
 
-### Phase 9 — 기술 문서화
+### Phase 9 — PR 작성
 
 **언제**: 코드 리뷰 통과 후
-
-**커맨드**:
-```bash
-/confluence-update WP-1234
-```
-
-**산출물**: Confluence 기술 문서 (컴포넌트 구조, 훅, URL State, 테스트 현황)
-
----
-
-### Phase 10 — PR 작성
-
-**언제**: 문서화 완료 후
 
 **커맨드**:
 ```bash
@@ -366,10 +359,10 @@ npx vitest run pageComponents/[feature]  # 모든 테스트 PASS
 
 | 상황 | 커맨드 |
 |------|--------|
-| QA/테스트 중 버그 발견 | `/bug-report` |
+| 에픽 → 프론트 하위 티켓 분해 | `/epic-frontend-splitter` |
+| Figma description 정책 검증 | `/spec-validator` |
+| PRD ↔ Figma Gap 확인 | `/figma-prd-validator` |
 | 버전 릴리즈 | `/release-notes v1.2.0` |
-| 빌드/타입 에러 | `/build-fix` |
-| 보안 검토 필요 | `/security-review` |
 | 테스트 인프라 없을 때 | `/vitest-setup` |
 | API 모킹 설정 | `/msw-setup` |
 | 전체 파이프라인 준수 현황 확인 | `/component-audit` |
@@ -385,15 +378,14 @@ npx vitest run pageComponents/[feature]  # 모든 테스트 PASS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [0] PRD        /figma-jira-prd [figma] [jira]
 [1] 브랜치      /branch-from-ticket WP-XXXX
-[2] 설계        /planner [figma]
+[2] 설계        /screen-plan [figma]
 [3] API 훅  ┐  /api-integration WP-XXXX     ← 병렬
 [4] 테스트  ┘  /test-writer --all WP-XXXX   ← 병렬
-[5] 구현        /code-writer --ui pageComponents/[f]/planner.md
-[6] 리팩터      /refactor pageComponents/[f]/planner.md
+[5] 구현        /code-writer --ui pageComponents/[f]/screen-plan.md
+[6] 리팩터      /refactor pageComponents/[f]/screen-plan.md
 [7] 커버리지    /coverage-report WP-XXXX
 [8] 리뷰        /code-review
-[9] 문서        /confluence-update WP-XXXX
-[10] PR        /pull-request-description
+[9] PR         /pull-request-description
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  HOTFIX PIPELINE
@@ -410,7 +402,9 @@ npx vitest run pageComponents/[feature]  # 모든 테스트 PASS
  감사/검토
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 [A1] 전체 현황      /component-audit
-[A2] 보안 검토      /security-review
+[A2] 스펙 검증      /spec-validator
+[A3] PRD ↔ Figma   /figma-prd-validator
+[A4] 에픽 분해      /epic-frontend-splitter
 ```
 
 ---
@@ -420,7 +414,7 @@ npx vitest run pageComponents/[feature]  # 모든 테스트 PASS
 | 안티패턴 | 이유 | 대안 |
 |---------|------|------|
 | Phase 4 없이 Phase 5 진행 | TDD 위반 — 구현이 테스트를 이기면 품질 보증 불가 | `/test-writer` 먼저 실행 |
-| planner.md 없이 코드 작성 | 설계 없는 구현은 리팩터 비용 3배 | `/planner` 먼저 실행 |
+| planner.md 없이 코드 작성 | 설계 없는 구현은 리팩터 비용 3배 | `/screen-plan` 먼저 실행 |
 | 서비스 레이어(apis/service/) 별도 생성 | 파일 분산으로 응집도 저하 | 훅 파일에 API 로직 co-locate |
 | `data-testid` 셀렉터 사용 | 구현 세부사항 결합 — 리팩터 시 테스트 파괴 | ARIA role/text 기반 셀렉터 사용 |
 | `px` 단위 사용 | 디자인 토큰 불일치 | `rem` 단위 사용 |
@@ -437,13 +431,12 @@ npx vitest run pageComponents/[feature]  # 모든 테스트 PASS
 1. `git clone` 후 `/vitest-setup` 으로 테스트 환경 구성
 2. Jira 티켓 확인 → `/figma-jira-prd` 로 PRD 작성
 3. `/branch-from-ticket WP-XXXX` 로 브랜치 생성
-4. `/planner [figma-url]` 로 설계 문서 작성 후 팀 리뷰
+4. `/screen-plan [figma-url]` 로 설계 문서 작성 후 팀 리뷰
 5. Phase 3+4 병렬: `/api-integration` + `/test-writer --all`
-6. `/code-writer --ui pageComponents/[feature]/planner.md`
+6. `/code-writer --ui pageComponents/[feature]/screen-plan.md`
 7. 테스트 GREEN 확인 → `/refactor` → `/coverage-report`
-8. `/code-review` 통과 → `/confluence-update` → `/pull-request-description`
+8. `/code-review` 통과 → `/pull-request-description`
 
 **막혔을 때:**
 - 현재 단계 확인: `/workflow WP-XXXX`
 - 전체 현황 점검: `/component-audit`
-- 빌드 에러: `/build-fix`

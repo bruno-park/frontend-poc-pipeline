@@ -98,3 +98,4 @@
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |------|----------|------|------|
 | 2026-05-22 | 초기 구성 — 에이전트 3명(skill-architect, routing-syncer, marketplace-validator) + 오케스트레이터(marketplace-stewardship) | `.claude/agents/*`, `.claude/skills/marketplace-stewardship/` | harness 메타-스킬 기반으로 마켓플레이스 운영 자동화 도입 |
+| 2026-05-22 | `/workflow` 가이드 정합화 — broken reference 5종 제거(`/planner`→`/screen-plan`, `/confluence-update`/`/bug-report`/`/build-fix`/`/security-review` 삭제), Phase 10 → Phase 9 축소, Phase 0 품질 게이트에 `/spec-validator`+`/figma-prd-validator` 명시, 부가 커맨드에 `/epic-frontend-splitter` 등록, `allowed-tools` mcp-atlassian 인스턴스 generic화 | `plugins/.../commands/workflow.md` | 사용자가 막힐 broken link 제거 + README와 phase 일관성 정렬 |
