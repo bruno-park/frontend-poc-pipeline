@@ -1,5 +1,7 @@
 # frontend-poc-pipeline
 
+[![validate](https://github.com/bruno-park/frontend-poc-pipeline/actions/workflows/validate.yml/badge.svg)](https://github.com/bruno-park/frontend-poc-pipeline/actions/workflows/validate.yml)
+
 Claude Code plugin marketplace for an AI-driven frontend PoC pipeline:
 **Figma → PRD → Branch → TDD → Implementation → PR**.
 
@@ -72,6 +74,16 @@ Claude Code plugin marketplace for an AI-driven frontend PoC pipeline:
 - **PreToolUse `mcp__figma-dev-mode-mcp-server__.*`** — Figma MCP 서버 응답 점검
 - **PreToolUse `mcp__mcp-atlassian-*__jira_update_issue`** — PRD 필수 섹션 누락 경고 (업로드는 차단하지 않음)
 - **PostToolUse `mcp__mcp-atlassian-*__jira_update_issue`** — PRD 업로드 히스토리를 `~/.claude/prd-history.log`에 기록
+
+## Validate
+
+마켓플레이스/플러그인 메타데이터, hooks 스크립트, skills frontmatter, 멀티-에이전트 라우팅 doc(`AGENTS.md`/`CLAUDE.md`/`GEMINI.md`)의 정합성을 검사합니다.
+
+```
+python3 scripts/validate-plugin.py
+```
+
+CI는 `.github/workflows/validate.yml` 에서 동일 검증 + `shellcheck --severity=error` 를 돌립니다.
 
 ## License
 

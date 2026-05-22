@@ -3,6 +3,12 @@
 이 파일은 [Keep a Changelog](https://keepachangelog.com/) 형식을 따르고
 프로젝트는 [Semantic Versioning](https://semver.org/)을 사용합니다.
 
+## [Unreleased]
+
+### Added
+- `scripts/validate-plugin.py` — stdlib-only 마켓플레이스 무결성 검증기 (버전 동기화, hooks 스크립트 실존·문법, SKILL.md frontmatter, AGENTS/CLAUDE/GEMINI 라우팅 ↔ skills 일치 검사).
+- `.github/workflows/validate.yml` — push/PR 시 검증기 + `shellcheck --severity=error` 자동 실행.
+
 ## [0.6.0] - 2026-05-21
 
 ### Changed

@@ -1,0 +1,22 @@
+name: validate
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run plugin validator
+        run: python3 scripts/validate-plugin.py
+
+      - name: ShellCheck hooks
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y shellcheck
+          shellcheck --severity=error plugins/frontend-poc-pipeline/hooks/*.sh
