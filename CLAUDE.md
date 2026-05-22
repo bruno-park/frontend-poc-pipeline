@@ -84,3 +84,17 @@
 - API: TanStack Query (React Query)
 - TypeScript strict — any 타입 금지
 - 컨벤션 상세: `plugins/frontend-poc-pipeline/skills/conventions/SKILL.md`
+
+---
+
+## 하네스: 마켓플레이스 유지·진화
+
+**목표:** frontend-poc-pipeline 마켓플레이스(`plugins/frontend-poc-pipeline/`)를 사람이 한 곳만 고치고 나머지를 잊는 회귀 없이 진화시킨다.
+
+**트리거:** 마켓플레이스 자산을 건드리는 요청(신규 skill 추가/audit, 라우팅 doc 동기화, 검증 게이트, 릴리즈 준비) 시 `marketplace-stewardship` 스킬을 호출하라. 외부 프로젝트의 `figma → PR` 자동화는 본 하네스 트리거가 아니며 `plugins/.../skills/*` 의 도메인 스킬을 직접 사용한다.
+
+**변경 이력:**
+
+| 날짜 | 변경 내용 | 대상 | 사유 |
+|------|----------|------|------|
+| 2026-05-22 | 초기 구성 — 에이전트 3명(skill-architect, routing-syncer, marketplace-validator) + 오케스트레이터(marketplace-stewardship) | `.claude/agents/*`, `.claude/skills/marketplace-stewardship/` | harness 메타-스킬 기반으로 마켓플레이스 운영 자동화 도입 |
