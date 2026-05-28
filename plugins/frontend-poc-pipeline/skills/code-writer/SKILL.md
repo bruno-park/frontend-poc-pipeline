@@ -1,8 +1,6 @@
 ---
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, mcp__figma-dev-mode-mcp-server__get_metadata, mcp__figma-dev-mode-mcp-server__get_screenshot, mcp__figma-dev-mode-mcp-server__get_code
-argument-hint: [--ui|--api|--all] [planner.md 경로] [figma-url|image-path] [--mock]
+name: code-writer
 description: "구현 커맨드 — --ui: UI 컴포넌트, --api: React Query 훅, --all: 둘 다. planner.md 기반으로 동작합니다."
-model: claude-sonnet-4-6
 ---
 
 # Unified Design-to-Code Implementation

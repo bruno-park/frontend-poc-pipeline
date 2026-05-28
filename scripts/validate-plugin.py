@@ -124,6 +124,9 @@ def check_manifests() -> None:
 
 
 def check_hooks() -> None:
+    if not HOOKS_JSON.exists():
+        ok("hooks.json absent — plugin defines no hooks")
+        return
     hooks_doc = load_json(HOOKS_JSON)
     if not hooks_doc:
         return

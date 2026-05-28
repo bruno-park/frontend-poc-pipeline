@@ -1,33 +1,51 @@
 {
-  "description": "frontend-poc-pipeline 보조 훅: Figma MCP 가용성 점검 + Jira PRD 업로드 게이트/로그",
   "hooks": {
-    "PreToolUse": [
+    "PostToolUse": [
       {
-        "matcher": "mcp__figma-dev-mode-mcp-server__.*",
+        "matcher": "Write",
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/figma-check.sh\""
-          }
-        ]
-      },
-      {
-        "matcher": "mcp__mcp-atlassian-.*__jira_update_issue",
-        "hooks": [
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/planner-figma-check.sh"
+          },
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/prd-gate.sh\""
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/test-completeness-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/code-review-gate.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/console-log-any-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/package-json-change-warn.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/e2e-test-gate.sh"
           }
         ]
       }
     ],
-    "PostToolUse": [
+    "PreToolUse": [
       {
-        "matcher": "mcp__mcp-atlassian-.*__jira_update_issue",
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/prd-log.sh\""
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/commit-message-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/branch-name-check.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/pr-gate-check.sh"
           }
         ]
       }

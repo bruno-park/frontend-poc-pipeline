@@ -1,8 +1,6 @@
 ---
-allowed-tools: Read, Glob, Grep, Bash, mcp__mcp-atlassian-*__jira_get_issue, mcp__mcp-atlassian-*__jira_get_issue_development_info
-argument-hint: [JIRA-TICKET] [--status] [--hotfix]
+name: workflow
 description: AI 개발 파이프라인 가이드 — 현재 단계를 진단하고 다음 커맨드를 안내합니다
-model: claude-sonnet-4-6
 ---
 
 # Frontend AI Pipeline — Workflow Guide

@@ -61,6 +61,13 @@
 | `/release-notes`, `릴리즈 노트`, `배포 노트` | `plugins/frontend-poc-pipeline/skills/release-notes/SKILL.md` |
 | `/vitest-setup`, `vitest 설치`, `테스트 환경 설정` | `plugins/frontend-poc-pipeline/skills/vitest-setup/SKILL.md` |
 | `/msw-setup`, `MSW 설치`, `mock service worker` | `plugins/frontend-poc-pipeline/skills/msw-setup/SKILL.md` |
+| `/workflow`, `파이프라인 가이드`, `현재 단계`, `다음 커맨드 안내` | `plugins/frontend-poc-pipeline/skills/workflow/SKILL.md` |
+| `/screen-plan`, `화면 기획`, `컴포넌트 계획`, `planner.md 작성`, `screen plan` | `plugins/frontend-poc-pipeline/skills/screen-plan/SKILL.md` |
+| `/test-writer`, `TDD 테스트 먼저`, `RED phase`, `실패하는 테스트 작성` | `plugins/frontend-poc-pipeline/skills/test-writer/SKILL.md` |
+| `/code-writer`, `구현 커맨드`, `--ui`, `--api`, `--all`, `planner 기반 구현` | `plugins/frontend-poc-pipeline/skills/code-writer/SKILL.md` |
+| `/refactor`, `TDD REFACTOR`, `리팩터링`, `GREEN 후 정리` | `plugins/frontend-poc-pipeline/skills/refactor/SKILL.md` |
+| `/hotfix`, `핫픽스`, `긴급 버그`, `fast-path`, `5단계 핫픽스` | `plugins/frontend-poc-pipeline/skills/hotfix/SKILL.md` |
+| `/marketplace-stewardship`, `스킬 추가`, `스킬 수정`, `스킬 감사`, `라우팅 동기화`, `라우팅 점검`, `검증 돌려`, `릴리즈 준비`, `마켓플레이스 점검`, `마켓플레이스 유지보수` | `plugins/frontend-poc-pipeline/skills/marketplace-stewardship/SKILL.md` |
 
 ---
 
@@ -97,5 +104,6 @@
 
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |------|----------|------|------|
-| 2026-05-22 | 초기 구성 — 에이전트 3명(skill-architect, routing-syncer, marketplace-validator) + 오케스트레이터(marketplace-stewardship) | `.claude/agents/*`, `.claude/skills/marketplace-stewardship/` | harness 메타-스킬 기반으로 마켓플레이스 운영 자동화 도입 |
+| 2026-05-22 | 초기 구성 — 에이전트 3명(skill-architect, routing-syncer, marketplace-validator) + 오케스트레이터(marketplace-stewardship) | `.claude/agents/*`, `.claude/skills/marketplace-stewardship/` (→ 2026-05-27 플러그인으로 이동) | harness 메타-스킬 기반으로 마켓플레이스 운영 자동화 도입 |
 | 2026-05-22 | `/workflow` 가이드 정합화 — broken reference 5종 제거(`/planner`→`/screen-plan`, `/confluence-update`/`/bug-report`/`/build-fix`/`/security-review` 삭제), Phase 10 → Phase 9 축소, Phase 0 품질 게이트에 `/spec-validator`+`/figma-prd-validator` 명시, 부가 커맨드에 `/epic-frontend-splitter` 등록, `allowed-tools` mcp-atlassian 인스턴스 generic화 | `plugins/.../commands/workflow.md` | 사용자가 막힐 broken link 제거 + README와 phase 일관성 정렬 |
+| 2026-05-27 | 패키징 재배치 — 하네스 에이전트 3종을 `.claude/agents/`에서 플러그인 내부로 이동, `commands/` 6종(code-writer/hotfix/refactor/screen-plan/test-writer/workflow)을 모두 `skills/<name>/`로 전환, `hooks/` 폴더는 `.gitkeep`만 남기고 비움, validator의 `check_hooks()`를 missing-hooks.json 관대 처리로 수정 | `plugins/frontend-poc-pipeline/agents/`, `plugins/frontend-poc-pipeline/skills/{code-writer,hotfix,refactor,screen-plan,test-writer,workflow}/`, `plugins/frontend-poc-pipeline/hooks/.gitkeep`, `scripts/validate-plugin.py` | 마켓플레이스 설치 측에서도 에이전트가 동작하도록 패키지 내부로 통합 + commands→skills 일원화로 호출 경로 단일화 + 사용하지 않는 hook 정리 |

@@ -9,11 +9,11 @@ model: opus
 
 ## 핵심 역할
 
-frontend-poc-pipeline 마켓플레이스의 SKILL.md를 **만들고 다듬는다**. 신규 스킬 초안 작성, 기존 17개 스킬의 품질 audit, description 트리거 강화, references/ 분리가 주 임무다.
+frontend-poc-pipeline 마켓플레이스의 SKILL.md를 **만들고 다듬는다**. 신규 스킬 초안 작성, 기존 스킬의 품질 audit, description 트리거 강화, references/ 분리가 주 임무다.
 
 ## 작업 원칙
 
-- **harness의 skill-writing-guide를 권위로 삼는다.** 참조: `~/.claude/plugins/marketplaces/harness-marketplace/skills/harness/references/skill-writing-guide.md`. 핵심:
+- **skill-writing 원칙을 준수한다.** 핵심:
   - description은 적극적("pushy")으로 — 스킬이 하는 일 + 구체적 트리거 상황 + 유사한데 트리거하면 안 되는 경우 구분
   - "ALWAYS/NEVER" 강압 대신 **Why를 설명**한다
   - 본문은 500줄 이내. 초과 시 references/로 분리하고 본문에는 포인터만
@@ -31,7 +31,7 @@ frontend-poc-pipeline 마켓플레이스의 SKILL.md를 **만들고 다듬는다
 **출력:**
 - 신규: `plugins/frontend-poc-pipeline/skills/{name}/SKILL.md` + 필요 시 `references/`
 - audit: `_workspace/skill-audit-{name}.md` — 발견 사항 + 권장 수정안 diff
-- 결과 요약을 routing-syncer에게 SendMessage (라우팅 테이블 추가 필요 시)
+- 신규 스킬 추가 시 `_workspace/routing-request-{name}.md`에 트리거 키워드 저장 → routing-syncer가 읽어서 처리
 
 ## 에러 핸들링
 
@@ -41,10 +41,10 @@ frontend-poc-pipeline 마켓플레이스의 SKILL.md를 **만들고 다듬는다
 
 ## 팀 통신 프로토콜
 
-- **수신:** marketplace-stewardship 오케스트레이터의 TaskCreate, 다른 팀원의 SendMessage (라우팅/검증 피드백)
-- **발신:**
-  - routing-syncer ← 신규 스킬 추가 완료 시 (라우팅 doc 갱신 요청)
-  - marketplace-validator ← SKILL.md 수정 완료 시 (validate-plugin.py 검증 요청)
+- **수신:** marketplace-stewardship 오케스트레이터가 순차 실행 중 이 에이전트의 `.md`를 읽고 지시를 따름
+- **발신 (파일 기반):**
+  - `_workspace/routing-request-{name}.md` 생성 → routing-syncer가 다음 단계에서 읽음
+  - `_workspace/validate-request-{name}.md` 생성 → marketplace-validator가 다음 단계에서 읽음
 
 ## 재호출 지침
 

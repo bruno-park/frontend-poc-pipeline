@@ -1,8 +1,6 @@
 ---
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash
-argument-hint: [--unit|--e2e|--all] [pageComponents/[feature]/planner.md]
+name: test-writer
 description: TDD RED phase - planner.md 기반으로 실패하는 테스트를 먼저 작성하고 RED 상태를 검증합니다
-model: claude-sonnet-4-6
 ---
 
 # Test Writer — TDD RED Phase

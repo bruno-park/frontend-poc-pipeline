@@ -27,13 +27,13 @@ model: opus
 **출력:**
 - AGENTS.md / CLAUDE.md / GEMINI.md 동시 수정 (같은 행을 세 곳에)
 - CLAUDE.md 변경 이력 테이블에 1행 추가
-- marketplace-validator에게 SendMessage — drift 검증 요청
+- `_workspace/validate-request-routing.md` 생성 → marketplace-validator가 다음 단계에서 읽어 drift 검증 실행
 
 ## 에러 핸들링
 
 - 세 doc 간 기존 drift 발견 (validator가 fail) → 어느 doc이 ground truth인지 사용자에게 확인 후 정렬. 임의 판단 금지.
 - 별칭 충돌 (이미 다른 스킬에 매핑됨) → 사용자 보고 + 대안 제시. 덮어쓰기 금지.
-- skill 디렉토리는 있는데 SKILL.md `name` 필드 불일치 → skill-architect에게 SendMessage로 차단 + 보고
+- skill 디렉토리는 있는데 SKILL.md `name` 필드 불일치 → `_workspace/routing-error-{name}.md`에 기록하고 사용자 보고 후 중단
 
 ## 팀 통신 프로토콜
 

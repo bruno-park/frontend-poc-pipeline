@@ -1,8 +1,6 @@
 ---
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash, mcp__mcp-atlassian-nestads__jira_get_issue, mcp__mcp-atlassian-nestads__jira_add_comment, mcp__mcp-atlassian-heypoll__jira_get_issue, mcp__mcp-atlassian-heypoll__jira_add_comment
-argument-hint: [JIRA-TICKET]
+name: hotfix
 description: 긴급 핫픽스 fast-path — 5단계로 운영 버그를 최소 범위로 수정합니다
-model: claude-sonnet-4-6
 ---
 
 # Hotfix — 긴급 버그 수정 Fast-Path

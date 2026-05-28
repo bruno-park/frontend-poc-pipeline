@@ -1,8 +1,6 @@
 ---
-allowed-tools: Read, Write, Glob, Grep, Bash(find:\*), Bash(mkdir:*), mcp__figma-dev-mode-mcp-server__get_metadata, mcp__figma-dev-mode-mcp-server__get_screenshot, mcp__figma-dev-mode-mcp-server__get_code, mcp__claude_ai_Figma__get_metadata, mcp__claude_ai_Figma__get_screenshot, mcp__claude_ai_Figma__get_design_context, mcp__claude_ai_Figma__get_variable_defs, mcp__mcp-atlassian-nestads__jira_get_issue, mcp__mcp-atlassian-heypoll__jira_get_issue
-argument-hint: [figma-url] [jira-issue-key] [image-path-1] [image-path-2] [optional-context]
+name: screen-plan
 description: Plan components from design, analyze URL state needs, and save as planner.md in pageComponents/[feature]/ directory
-model: claude-opus-4-6
 ---
 
 # Design-Based Component Planning (with File Output)

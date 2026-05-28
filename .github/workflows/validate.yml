@@ -19,4 +19,4 @@ jobs:
         run: |
           sudo apt-get update -y
           sudo apt-get install -y shellcheck
-          shellcheck --severity=error plugins/frontend-poc-pipeline/hooks/*.sh
+          find plugins/frontend-poc-pipeline/hooks -name '*.sh' | xargs --no-run-if-empty shellcheck --severity=error

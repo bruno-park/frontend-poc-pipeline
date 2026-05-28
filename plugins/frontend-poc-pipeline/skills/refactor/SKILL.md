@@ -1,8 +1,6 @@
 ---
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash
-argument-hint: [pageComponents/[feature]/planner.md] [optional-context]
+name: refactor
 description: TDD REFACTOR phase - GREEN 통과 후 프로젝트 컨벤션에 맞게 코드를 정리합니다. 테스트는 항상 GREEN 유지.
-model: claude-sonnet-4-6
 ---
 
 # Refactor — TDD REFACTOR Phase
