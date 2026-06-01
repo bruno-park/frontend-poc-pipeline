@@ -249,7 +249,7 @@ npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -5
 /code-writer --ui pageComponents/[feature]/planner.md --mock  # API 미완성 시
 ```
 
-**내부 동작**: `ui-builder` 스킬에 위임
+**내부 동작**: `code-writer --ui`가 planner.md 기반으로 컴포넌트 구현
 
 **산출물**: `pageComponents/[feature]/components/**/*.tsx`
 - shadcn/ui 우선, rsuite fallback

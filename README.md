@@ -22,14 +22,15 @@ Claude Code plugin marketplace for an AI-driven frontend PoC pipeline:
     spec-validator          → Figma description 정책 검증
 [2] branch-from-ticket      → Jira 티켓 → 브랜치 생성
     epic-frontend-splitter  → 에픽 → 프론트 하위 티켓 분해
-[3] unit-test-gen           → TDD RED: 단위 테스트 작성
-    e2e-test-gen            → Playwright E2E 테스트 작성
-[4] api-integration         → React Query 훅 생성
-    ui-builder              → planner.md → 컴포넌트 구현
-[5] code-review             → 로컬 diff 또는 PR 코드 리뷰
-    pull-request-description → PR/MR 설명 생성
-    release-notes           → git log + Jira → 릴리즈 노트
+[3] feature-planner         → planner.md (구현 청사진) 작성
+[4] test-writer             → TDD RED (위임: unit-test-gen, e2e-test-gen)
+    api-integration         → React Query 훅 생성 (test-writer와 병렬)
+[5] code-writer             → TDD GREEN: 구현 (--ui 컴포넌트 / --api → api-integration 위임)
+[6] refactor                → TDD REFACTOR: GREEN 유지하며 정리
+[7] code-review             → 로컬 diff 또는 PR 코드 리뷰
     coverage-report         → 커버리지 + AC 매핑 리포트
+[8] pull-request-description → PR/MR 설명 생성
+    release-notes           → git log + Jira → 릴리즈 노트
 ```
 
 ## Skills
@@ -41,16 +42,21 @@ Claude Code plugin marketplace for an AI-driven frontend PoC pipeline:
 | `spec-validator` | 1 | Figma description 정책 검증 |
 | `branch-from-ticket` | 2 | Jira 티켓 → 브랜치 자동 생성 |
 | `epic-frontend-splitter` | 2 | 에픽 Jira → 프론트 하위 티켓 자동 생성 |
-| `unit-test-gen` | 3 | TDD RED: 단위 테스트 작성 |
-| `e2e-test-gen` | 3 | Playwright E2E 테스트 작성 |
+| `feature-planner` | 3 | Figma/PRD/티켓 → planner.md 구현 청사진 |
+| `test-writer` | 4 | TDD RED orchestrator (위임: unit-test-gen, e2e-test-gen) |
+| `unit-test-gen` | 4 | 단위 테스트 작성 (test-writer 위임 대상) |
+| `e2e-test-gen` | 4 | Playwright E2E 테스트 작성 (test-writer 위임 대상) |
 | `api-integration` | 4 | Apidog MCP → React Query 훅 |
-| `ui-builder` | 4 | planner.md → UI 컴포넌트 |
-| `code-review` | 5 | 로컬/PR 코드 리뷰 |
-| `pull-request-description` | 5 | PR/MR 설명 자동 생성 |
-| `release-notes` | 5 | 릴리즈 노트 생성 |
-| `coverage-report` | 5 | 단위/E2E 커버리지 리포트 |
+| `code-writer` | 5 | TDD GREEN 구현 (`--ui` 컴포넌트 / `--api` → api-integration) |
+| `ui-builder` | — | ⚠️ DEPRECATED → `code-writer --ui`로 통합 |
+| `refactor` | 6 | TDD REFACTOR: GREEN 유지하며 정리 |
+| `code-review` | 7 | 로컬/PR 코드 리뷰 |
+| `coverage-report` | 7 | 단위/E2E 커버리지 리포트 |
+| `pull-request-description` | 8 | PR/MR 설명 자동 생성 |
+| `release-notes` | 8 | 릴리즈 노트 생성 |
 | `component-audit` | — | pageComponents 파이프라인 준수 감사 |
 | `conventions` | — | 프로젝트 공통 컨벤션 레퍼런스 |
+| `hotfix` | — | 긴급 운영 핫픽스 fast-path |
 | `vitest-setup` | setup | Vitest + RTL 환경 구성 |
 | `msw-setup` | setup | Mock Service Worker 설치 |
 

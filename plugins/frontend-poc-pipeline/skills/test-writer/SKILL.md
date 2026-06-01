@@ -418,6 +418,6 @@ Tests: 9 failed, 0 passed
 [1단계] /feature-planner  → planner.md 생성
 [2단계] /api-integration           → React Query 훅 타입 생성
 [3단계] /test-writer  ← 지금 여기  → 테스트 코드 (RED)
-[4단계] /code-writer or /ui-builder → 구현 코드 (GREEN)
+[4단계] /code-writer --ui            → 구현 코드 (GREEN)
 [5단계] 리팩터링                   → 테스트 유지하며 정리
 ```

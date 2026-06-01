@@ -18,7 +18,7 @@
 
 예시:
 - `/code-review` → `plugins/frontend-poc-pipeline/skills/code-review/SKILL.md`
-- `$ui-builder` → `plugins/frontend-poc-pipeline/skills/ui-builder/SKILL.md`
+- `$test-writer` → `plugins/frontend-poc-pipeline/skills/test-writer/SKILL.md`
 - `/pr` 또는 `$pr` → `pull-request-description` 스킬로 해석 (아래 별칭 참고)
 
 **별칭 (짧은 이름 → 실제 스킬명):**
@@ -29,7 +29,7 @@
 | `/mr`, `$mr` | `pull-request-description` |
 | `/tdd`, `$tdd` | `unit-test-gen` |
 | `/api`, `$api` | `api-integration` |
-| `/ui`, `$ui` | `ui-builder` |
+| `/ui`, `$ui` | `code-writer` |
 | `/e2e`, `$e2e` | `e2e-test-gen` |
 | `/prd`, `$prd` | `figma-jira-prd` |
 | `/review`, `$review` | `code-review` |
@@ -49,7 +49,7 @@
 | `/branch-from-ticket`, `브랜치 만들어`, `브랜치 생성`, jira 티켓번호 + 브랜치 | `plugins/frontend-poc-pipeline/skills/branch-from-ticket/SKILL.md` |
 | `/unit-test-gen`, `단위 테스트 작성`, `유닛 테스트`, `TDD RED`, `테스트 먼저` | `plugins/frontend-poc-pipeline/skills/unit-test-gen/SKILL.md` |
 | `/api-integration`, `API 훅 만들어`, `React Query 훅`, `API 연동` | `plugins/frontend-poc-pipeline/skills/api-integration/SKILL.md` |
-| `/ui-builder`, `컴포넌트 구현`, `UI 만들어`, `화면 구현`, `TDD GREEN` | `plugins/frontend-poc-pipeline/skills/ui-builder/SKILL.md` |
+| `/ui-builder` (deprecated → `/code-writer --ui` 사용) | `plugins/frontend-poc-pipeline/skills/ui-builder/SKILL.md` |
 | `/pull-request-description`, `PR 만들어`, `MR 만들어`, `PR 올려`, `MR 올려`, `PR 생성`, `MR 생성`, `pull request`, `merge request` | `plugins/frontend-poc-pipeline/skills/pull-request-description/SKILL.md` |
 | `/code-review`, `코드 리뷰`, `PR 리뷰`, `MR 리뷰`, `코드 검토` | `plugins/frontend-poc-pipeline/skills/code-review/SKILL.md` |
 | `/e2e-test-gen`, `E2E 테스트`, `playwright 테스트`, `e2e 작성` | `plugins/frontend-poc-pipeline/skills/e2e-test-gen/SKILL.md` |
@@ -64,7 +64,7 @@
 | `/workflow`, `파이프라인 가이드`, `현재 단계`, `다음 커맨드 안내` | `plugins/frontend-poc-pipeline/skills/workflow/SKILL.md` |
 | `/feature-planner`, `화면 기획`, `컴포넌트 계획`, `planner.md 작성`, `screen plan`, `feature plan`, `구현 계획` | `plugins/frontend-poc-pipeline/skills/feature-planner/SKILL.md` |
 | `/test-writer`, `TDD 테스트 먼저`, `RED phase`, `실패하는 테스트 작성` | `plugins/frontend-poc-pipeline/skills/test-writer/SKILL.md` |
-| `/code-writer`, `구현 커맨드`, `--ui`, `--api`, `--all`, `planner 기반 구현` | `plugins/frontend-poc-pipeline/skills/code-writer/SKILL.md` |
+| `/code-writer`, `구현 커맨드`, `컴포넌트 구현`, `UI 만들어`, `화면 구현`, `TDD GREEN`, `--ui`, `--api`, `--all`, `planner 기반 구현` | `plugins/frontend-poc-pipeline/skills/code-writer/SKILL.md` |
 | `/refactor`, `TDD REFACTOR`, `리팩터링`, `GREEN 후 정리` | `plugins/frontend-poc-pipeline/skills/refactor/SKILL.md` |
 | `/hotfix`, `핫픽스`, `긴급 버그`, `fast-path`, `5단계 핫픽스` | `plugins/frontend-poc-pipeline/skills/hotfix/SKILL.md` |
 | `/marketplace-stewardship`, `스킬 추가`, `스킬 수정`, `스킬 감사`, `라우팅 동기화`, `라우팅 점검`, `검증 돌려`, `릴리즈 준비`, `마켓플레이스 점검`, `마켓플레이스 유지보수` | `plugins/frontend-poc-pipeline/skills/marketplace-stewardship/SKILL.md` |
@@ -74,12 +74,16 @@
 ## Pipeline Overview
 
 ```
-[1] figma-jira-prd         → Figma + Jira → PRD 작성
-[2] branch-from-ticket     → Jira 티켓 → 브랜치 생성
-[3] unit-test-gen          → TDD RED: 테스트 먼저 작성
-[4] api-integration        → React Query 훅 생성
-    ui-builder             → planner.md → 컴포넌트 구현
-[5] pull-request-description → PR/MR 생성
+[1] figma-jira-prd          → Figma + Jira → PRD 작성
+    figma-prd-validator     → Figma ↔ PRD 갭 검증 (품질 게이트)
+[2] branch-from-ticket      → Jira 티켓 → 브랜치 생성
+[3] feature-planner         → planner.md (구현 청사진) 작성
+[4] test-writer             → TDD RED: 테스트 먼저 작성 (위임: unit-test-gen, e2e-test-gen)
+    api-integration         → React Query 훅 생성 (test-writer와 병렬)
+[5] code-writer             → TDD GREEN: 구현 (--ui 컴포넌트 / --api → api-integration 위임)
+[6] refactor                → TDD REFACTOR: GREEN 유지하며 정리
+[7] code-review             → 코드 리뷰 (PR 게이트)
+[8] pull-request-description → PR/MR 생성
 ```
 
 ## Base Rules (스킬 미매칭 시 적용)

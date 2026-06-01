@@ -10,7 +10,7 @@ GREEN 단계 완료 후 테스트 커버리지를 측정하고 Jira AC 합격 �
 ## 트리거
 
 - `/coverage-report WP-XXXX` 직접 호출
-- test-writer 완료 + ui-builder GREEN 통과 후 자동 권장
+- test-writer 완료 + code-writer GREEN 통과 후 자동 권장
 
 ## 입력 컨텍스트
 

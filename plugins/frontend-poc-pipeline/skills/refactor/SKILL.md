@@ -31,7 +31,7 @@ npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -20
 ```
 
 - 모든 테스트 PASS → 계속
-- 실패 테스트 있음 → **STOP**: "GREEN 상태가 아닙니다. /ui-builder로 먼저 구현을 완성하세요."
+- 실패 테스트 있음 → **STOP**: "GREEN 상태가 아닙니다. /code-writer --ui로 먼저 구현을 완성하세요."
 
 ### 2. E2E 테스트 존재 확인 및 GREEN 검증
 
