@@ -17,7 +17,7 @@ model: opus
 |-------|------|---------|
 | 0. PRD | Figma + Jira → AC 작성 + 검증 | `/figma-jira-prd`, `/figma-prd-validator`, `/spec-validator` |
 | 1. 브랜치 생성 | Jira 티켓 → feature 브랜치 생성 | `/branch-from-ticket` |
-| 2. 화면 설계 | 컴포넌트 트리 + URL state → planner.md | `/screen-plan` |
+| 2. 화면 설계 | 컴포넌트 트리 + URL state → planner.md | `/feature-planner` |
 
 ## 작업 원칙
 
@@ -46,5 +46,5 @@ model: opus
 ## 참고
 
 - PRD 작성 가이드: `plugins/frontend-poc-pipeline/skills/figma-jira-prd/SKILL.md`
-- 화면 설계 가이드: `plugins/frontend-poc-pipeline/skills/screen-plan/SKILL.md`
+- 화면 설계 가이드: `plugins/frontend-poc-pipeline/skills/feature-planner/SKILL.md`
 - PRD 검증 가이드: `plugins/frontend-poc-pipeline/skills/figma-prd-validator/SKILL.md`

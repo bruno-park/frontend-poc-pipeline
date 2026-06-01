@@ -33,7 +33,7 @@ Glob: pageComponents/*/planner.md, pageComponents/*/*/planner.md
 ```
 
 - 찾으면 → Read로 전체 내용 로드
-- 없으면 → **STOP**: "planner.md가 없습니다. /planner 또는 /screen-plan으로 먼저 설계 문서를 작성하세요."
+- 없으면 → **STOP**: "planner.md가 없습니다. /feature-planner으로 먼저 설계 문서를 작성하세요."
 
 ### 2. 구현 파일 사전 존재 체크 (TDD 위반 감지)
 
@@ -415,7 +415,7 @@ Tests: 9 failed, 0 passed
 ## 아키텍처 위치
 
 ```
-[1단계] /planner or /screen-plan  → planner.md 생성
+[1단계] /feature-planner  → planner.md 생성
 [2단계] /api-integration           → React Query 훅 타입 생성
 [3단계] /test-writer  ← 지금 여기  → 테스트 코드 (RED)
 [4단계] /code-writer or /ui-builder → 구현 코드 (GREEN)

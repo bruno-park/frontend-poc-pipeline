@@ -61,7 +61,7 @@ Claude Code plugin marketplace for an AI-driven frontend PoC pipeline:
 | Command | Description |
 |---------|-------------|
 | `/workflow` | 현재 파이프라인 단계 진단 + 다음 커맨드 안내 |
-| `/screen-plan` | Figma → planner.md 화면 설계 |
+| `/feature-planner` | Figma/PRD/티켓 → planner.md 구현 계획 |
 | `/test-writer` | TDD RED 진입 — 실패 테스트 작성 |
 | `/code-writer` | UI/API/All 모드 구현 |
 | `/refactor` | GREEN 통과 후 리팩터링 |

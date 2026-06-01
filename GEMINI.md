@@ -62,7 +62,7 @@
 | `/vitest-setup`, `vitest 설치`, `테스트 환경 설정` | `plugins/frontend-poc-pipeline/skills/vitest-setup/SKILL.md` |
 | `/msw-setup`, `MSW 설치`, `mock service worker` | `plugins/frontend-poc-pipeline/skills/msw-setup/SKILL.md` |
 | `/workflow`, `파이프라인 가이드`, `현재 단계`, `다음 커맨드 안내` | `plugins/frontend-poc-pipeline/skills/workflow/SKILL.md` |
-| `/screen-plan`, `화면 기획`, `컴포넌트 계획`, `planner.md 작성`, `screen plan` | `plugins/frontend-poc-pipeline/skills/screen-plan/SKILL.md` |
+| `/feature-planner`, `화면 기획`, `컴포넌트 계획`, `planner.md 작성`, `screen plan`, `feature plan`, `구현 계획` | `plugins/frontend-poc-pipeline/skills/feature-planner/SKILL.md` |
 | `/test-writer`, `TDD 테스트 먼저`, `RED phase`, `실패하는 테스트 작성` | `plugins/frontend-poc-pipeline/skills/test-writer/SKILL.md` |
 | `/code-writer`, `구현 커맨드`, `--ui`, `--api`, `--all`, `planner 기반 구현` | `plugins/frontend-poc-pipeline/skills/code-writer/SKILL.md` |
 | `/refactor`, `TDD REFACTOR`, `리팩터링`, `GREEN 후 정리` | `plugins/frontend-poc-pipeline/skills/refactor/SKILL.md` |

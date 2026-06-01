@@ -20,8 +20,11 @@ Jira 티켓 번호를 받아 `feature/partner-list-WP-8118` 형식의 브랜치�
 
 ### Step 1: Jira 티켓 병렬 조회
 
+> **인스턴스 선택**: `mcp-atlassian-*`는 프로젝트 Jira/Confluence host에 맞는 인스턴스를 의미합니다 (예: `wisebirds.atlassian.net`→`mcp-atlassian-nestads`, `heypoll.atlassian.net`→`mcp-atlassian-heypoll`). 사용 환경에 존재하는 인스턴스를 선택하세요.
+
+
 1. args에서 Jira 이슈 키 파싱 (예: `WP-8118 WP-8119`)
-2. **모든 티켓을 병렬로 조회**: `mcp__mcp-atlassian-nestads__jira_get_issue`
+2. **모든 티켓을 병렬로 조회**: `mcp-atlassian-*:jira_get_issue`
    - fields: `summary,issuetype`
 3. **오류 처리**:
    - 조회 실패 티켓 → 오류 목록에 추가 후 건너뜀

@@ -94,8 +94,11 @@ npx playwright test e2e/[feature] --reporter=list 2>&1
 
 ### Jira AC 조회 (티켓 있을 경우)
 
+> **인스턴스 선택**: `mcp-atlassian-*`는 프로젝트 Jira/Confluence host에 맞는 인스턴스를 의미합니다 (예: `wisebirds.atlassian.net`→`mcp-atlassian-nestads`, `heypoll.atlassian.net`→`mcp-atlassian-heypoll`). 사용 환경에 존재하는 인스턴스를 선택하세요.
+
+
 ```
-mcp__mcp-atlassian-nestads__jira_get_issue(issue_key="WP-XXXX")
+mcp-atlassian-*:jira_get_issue(issue_key="WP-XXXX")
 ```
 
 ### 커버리지 결과 분석
@@ -128,7 +131,7 @@ Grep: [AC- (테스트 파일에서 AC 태그 찾기)
 > **필수**: 티켓 번호가 제공된 경우 반드시 이 Phase를 실행해야 합니다. 절대 건너뛰지 마세요.
 
 ```
-mcp__mcp-atlassian-nestads__jira_add_comment(
+mcp-atlassian-*:jira_add_comment(
   issue_key="WP-XXXX",
   comment="""
 ## 테스트 커버리지 리포트

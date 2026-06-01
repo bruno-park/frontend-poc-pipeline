@@ -11,6 +11,12 @@
 - harness 메타-스킬 기반 운영 하네스 — `.claude/agents/`에 에이전트 3명(skill-architect, routing-syncer, marketplace-validator), `.claude/skills/marketplace-stewardship/`에 오케스트레이터 스킬. CLAUDE.md에 하네스 포인터 + 변경 이력 등록. 마켓플레이스 자산 자체는 무변경 (공존 노선).
 
 ### Changed
+- `screen-plan` → `feature-planner` 리네임 + 보강 — 입력 소스(Figma 화면 / PRD / 평범한 티켓 / 이미지) 비종속 이름으로 정정.
+  - Confluence 기획 스펙 링크 자동 추적 추가 (Jira description의 `/wiki/.../pages/{PAGE_ID}` 감지 → `confluence_get_page`).
+  - 번호 섹션 없는 산문형 티켓 의미 기반 폴백 추가 (`references/plain-ticket-extraction.md`, WP-9137 worked example).
+  - 도메인 비종속화 (host→MCP 인스턴스 매핑 일반화), description Triggers 형식 강화.
+  - 본문 812→208줄로 축소 + 상세 절차를 `references/` 3종으로 분리 (skill-architect 500줄 가이드 준수).
+  - 라우팅 3종·marketplace.json·README·agents·교차참조 스킬(spec-validator/test-writer/workflow) 동기화. `planner.md` 출력 파일명은 유지.
 - `/workflow` 가이드 정합화 — broken reference 5종 제거 및 누락 자산 보강:
   - `/planner` → `/screen-plan` 이름 통일 (실제 슬래시 커맨드명 기준).
   - 자산 없는 4종(`/confluence-update`, `/bug-report`, `/build-fix`, `/security-review`) 삭제. Phase 10 → Phase 9로 축소(총 11 → 10 Phases).

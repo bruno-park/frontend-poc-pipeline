@@ -50,10 +50,13 @@ g7h8i9j chore: WP-1236 의존성 업데이트
 
 ## Phase 2: Jira 티켓 상세 조회
 
+> **인스턴스 선택**: `mcp-atlassian-*`는 프로젝트 Jira/Confluence host에 맞는 인스턴스를 의미합니다 (예: `wisebirds.atlassian.net`→`mcp-atlassian-nestads`, `heypoll.atlassian.net`→`mcp-atlassian-heypoll`). 사용 환경에 존재하는 인스턴스를 선택하세요.
+
+
 추출된 티켓 번호 목록에 대해:
 
 ```
-mcp__mcp-atlassian-nestads__jira_get_issue(issue_key="WP-XXXX")
+mcp-atlassian-*:jira_get_issue(issue_key="WP-XXXX")
 ```
 
 각 티켓에서:
@@ -136,7 +139,7 @@ mcp__mcp-atlassian-nestads__jira_get_issue(issue_key="WP-XXXX")
 ### 릴리즈 노트 페이지 생성
 
 ```
-mcp__mcp-atlassian-nestads__confluence_create_page(
+mcp-atlassian-*:confluence_create_page(
   space_key="HOME",
   title="릴리즈 노트 — v1.2.0 (YYYY-MM-DD)",
   content=[Phase 3 릴리즈 노트 내용],
@@ -149,7 +152,7 @@ mcp__mcp-atlassian-nestads__confluence_create_page(
 포함된 티켓들에 일괄 코멘트:
 
 ```
-mcp__mcp-atlassian-nestads__jira_add_comment(
+mcp-atlassian-*:jira_add_comment(
   issue_key="WP-XXXX",
   comment="v1.2.0 릴리즈 노트에 포함되었습니다: [Confluence URL]"
 )

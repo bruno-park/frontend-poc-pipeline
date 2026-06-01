@@ -21,7 +21,7 @@ planner.md를 기반으로 API 훅, UI 컴포넌트, 리팩터링을 실행한�
 
 ## 작업 원칙
 
-- **planner.md를 항상 먼저 읽는다.** 파일이 없으면 `/screen-plan`을 먼저 실행하도록 요청한다.
+- **planner.md를 항상 먼저 읽는다.** 파일이 없으면 `/feature-planner`을 먼저 실행하도록 요청한다.
 - **TypeScript strict 준수.** `any` 타입 금지. 타입 추론이 안 되면 명시적 타입 선언.
 - **UI 라이브러리 우선순위:** shadcn/ui → rsuite fallback. 새 컴포넌트 도입 전 기존 컴포넌트 재사용 검토.
 - **API:** TanStack Query (React Query). `useQuery` / `useMutation` 패턴 준수.
@@ -42,7 +42,7 @@ planner.md를 기반으로 API 훅, UI 컴포넌트, 리팩터링을 실행한�
 
 ## 에러 핸들링
 
-- planner.md 없음 → 구현 중단, `/screen-plan` 먼저 실행 요청
+- planner.md 없음 → 구현 중단, `/feature-planner` 먼저 실행 요청
 - TypeScript 타입 오류 → 구현 코드 수정, 타입 캐스팅 금지
 - 테스트 FAIL → 테스트를 깨뜨린 코드 원인 파악 후 수정 (테스트 삭제 금지)
 

@@ -11,7 +11,7 @@
     {
       "name": "frontend-poc-pipeline",
       "source": "./plugins/frontend-poc-pipeline",
-      "description": "Full pipeline: figma-jira-prd → branch-from-ticket → screen-plan → test-writer → api-integration → ui-builder → pull-request-description"
+      "description": "Full pipeline: figma-jira-prd → branch-from-ticket → feature-planner → test-writer → api-integration → ui-builder → pull-request-description"
     }
   ]
 }

@@ -35,8 +35,11 @@ description: 긴급 핫픽스 fast-path — 5단계로 운영 버그를 최소 �
 
 티켓 번호가 주어지면 먼저 Jira 티켓을 확인합니다.
 
+> **인스턴스 선택**: `mcp-atlassian-*`는 프로젝트 Jira/Confluence host에 맞는 인스턴스를 의미합니다 (예: `wisebirds.atlassian.net`→`mcp-atlassian-nestads`, `heypoll.atlassian.net`→`mcp-atlassian-heypoll`). 사용 환경에 존재하는 인스턴스를 선택하세요.
+
+
 ```
-mcp__mcp-atlassian-nestads__jira_get_issue(issue_key="WP-XXXX")
+mcp-atlassian-*:jira_get_issue(issue_key="WP-XXXX")
 ```
 
 **자격 기준 (하나라도 해당하면 핫픽스 적합):**
@@ -213,7 +216,7 @@ PR에 핫픽스임을 명시합니다:
 ## 핫픽스 완료 후 Jira 업데이트
 
 ```
-mcp__mcp-atlassian-nestads__jira_add_comment(
+mcp-atlassian-*:jira_add_comment(
   issue_key="WP-XXXX",
   comment="## 핫픽스 완료\n\n수정 파일: N개\n버그 재현 테스트: ✅\n기존 회귀: ✅ 없음\n\nPR: [PR URL]"
 )

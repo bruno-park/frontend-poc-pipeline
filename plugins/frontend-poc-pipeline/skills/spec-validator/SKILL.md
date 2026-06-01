@@ -1,6 +1,6 @@
 ---
 name: spec-validator
-description: "Figma 화면기획서의 description(no/title/setup/rules) 내용을 정책에 맞게 검증합니다. Confluence에서 정책 최신 버전을 확인하며, 접근 불가 시 로컬 fallback 사용. Triggers: (1) '디스크립션 검증해줘', '기획서 검증', 'figma description 검증', (2) '디스크립션 정책 알려줘', '디스크립션 규칙', (3) PRD/screen-plan 작성 시 정책 컨텍스트 주입 요청, (4) '/spec-validator'"
+description: "Figma 화면기획서의 description(no/title/setup/rules) 내용을 정책에 맞게 검증합니다. Confluence에서 정책 최신 버전을 확인하며, 접근 불가 시 로컬 fallback 사용. Triggers: (1) '디스크립션 검증해줘', '기획서 검증', 'figma description 검증', (2) '디스크립션 정책 알려줘', '디스크립션 규칙', (3) PRD/feature-planner 작성 시 정책 컨텍스트 주입 요청, (4) '/spec-validator'"
 ---
 
 # 기획서 디스크립션 검증기 (spec-validator)
@@ -118,7 +118,10 @@ Figma 화면기획서의 description을 "기획서 디스크립션 정책"에 �
 
 **Step 2: Confluence 버전 확인 (선택적)**
 
-`mcp__mcp-atlassian-nestads__confluence_get_page` 호출:
+> **인스턴스 선택**: `mcp-atlassian-*`는 프로젝트 Jira/Confluence host에 맞는 인스턴스를 의미합니다 (예: `wisebirds.atlassian.net`→`mcp-atlassian-nestads`, `heypoll.atlassian.net`→`mcp-atlassian-heypoll`). 사용 환경에 존재하는 인스턴스를 선택하세요.
+
+
+`mcp-atlassian-*:confluence_get_page` 호출:
 - `page_id`: `4641718273`
 - `convert_to_markdown`: `true`
 - `include_metadata`: `true`
@@ -225,7 +228,7 @@ URL: https://wisebirds.atlassian.net/wiki/spaces/HOME/pages/4641718273
 
 ### [guide 모드] PRD/화면기획 작성 시 정책 컨텍스트 주입
 
-다른 스킬(`figma-jira-prd`, `screen-plan` 등)에서 호출:
+다른 스킬(`figma-jira-prd`, `feature-planner` 등)에서 호출:
 
 ```
 # 다른 스킬에서 guide 모드 호출 방법
