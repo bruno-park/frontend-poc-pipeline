@@ -46,7 +46,7 @@ Claude Code plugin marketplace for an AI-driven frontend PoC pipeline:
 | `test-writer` | 4 | TDD RED orchestrator (위임: unit-test-gen, e2e-test-gen) |
 | `unit-test-gen` | 4 | 단위 테스트 작성 (test-writer 위임 대상) |
 | `e2e-test-gen` | 4 | Playwright E2E 테스트 작성 (test-writer 위임 대상) |
-| `api-integration` | 4 | Apidog MCP → React Query 훅 |
+| `api-integration` | 4 | React Query 훅 — 스펙 없으면 planner.md 잠정 타입+MSW 목, 있으면 OpenAPI(URL/파일/Apidog) 정확 타입 |
 | `code-writer` | 5 | TDD GREEN 구현 (`--ui` 컴포넌트 / `--api` → api-integration) |
 | `ui-builder` | — | ⚠️ DEPRECATED → `code-writer --ui`로 통합 |
 | `refactor` | 6 | TDD REFACTOR: GREEN 유지하며 정리 |

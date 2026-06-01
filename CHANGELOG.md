@@ -11,6 +11,11 @@
 - harness 메타-스킬 기반 운영 하네스 — `.claude/agents/`에 에이전트 3명(skill-architect, routing-syncer, marketplace-validator), `.claude/skills/marketplace-stewardship/`에 오케스트레이터 스킬. CLAUDE.md에 하네스 포인터 + 변경 이력 등록. 마켓플레이스 자산 자체는 무변경 (공존 노선).
 
 ### Changed
+- `api-integration` 스킬 Apidog MCP 비종속화 + "스펙 미정" 1급 경로화 — 백엔드 API가 아직 없는 게 흔한 FE/BE 병렬 개발 현실 반영.
+  - "타입 소스 판별(Spec Availability)" 섹션 신설 — **모드 A(스펙 없음 = 기본): planner.md/PRD 데이터 모델 → 잠정 타입(`// TODO(OpenAPI)` 재정합 마커) + MSW 목 shape 일치 / 모드 B(스펙 있음): 정확 타입**. 스펙 없음은 예외가 아니라 정상 1급 경로.
+  - 모드 B 소스 일반화: ①직접 URL `curl`(raw OpenAPI 수신, `WebFetch` 금지 주의) / ②로컬 JSON·YAML / ③Apidog MCP(선택). 특정 MCP·호스트 종속 제거. Scalar registry share URL은 *예시*로만 기재(하드코딩 안 함).
+  - 대형 스펙 타겟 추출(`python`/`jq`) + `$ref` → `components.schemas` 해소 규칙 명문화.
+  - frontmatter description·제목·템플릿 주석·Phase A2/A6를 모드 A/B 분기로 갱신. README 스킬 표 1행 갱신. 라우팅 키워드 테이블은 무변경(키워드 동일).
 - `screen-plan` → `feature-planner` 리네임 + 보강 — 입력 소스(Figma 화면 / PRD / 평범한 티켓 / 이미지) 비종속 이름으로 정정.
   - Confluence 기획 스펙 링크 자동 추적 추가 (Jira description의 `/wiki/.../pages/{PAGE_ID}` 감지 → `confluence_get_page`).
   - 번호 섹션 없는 산문형 티켓 의미 기반 폴백 추가 (`references/plain-ticket-extraction.md`, WP-9137 worked example).

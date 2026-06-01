@@ -1,9 +1,9 @@
 ---
 name: api-integration
-description: Apidog MCP로 API 스펙을 조회하고 planner.md hooks 기반으로 React Query 훅과 TypeScript 타입을 일괄 생성합니다. 기존 API 확장(enum/interface/model 변경)도 지원합니다.
+description: planner.md hooks 기반으로 React Query 훅과 TypeScript 타입을 일괄 생성합니다. 백엔드 스펙이 아직 없으면(흔한 경우) planner.md/PRD 데이터 모델에서 잠정 타입+MSW 목을 만들고, OpenAPI 스펙이 있으면(직접 URL을 curl / 로컬 JSON·YAML / Apidog MCP) 정확 타입을 생성합니다. 기존 API 확장(enum/interface/model 변경)도 지원합니다.
 ---
 
-# API Integration (Apidog MCP 기반)
+# API Integration (OpenAPI 스펙 기반)
 
 `planner.md`의 hooks/data flow 섹션을 분석하여 변경 범위를 판별하고, 필요에 따라 **새 훅 생성** 또는 **기존 데이터 구조 확장**을 수행합니다.
 
@@ -17,6 +17,55 @@ description: Apidog MCP로 API 스펙을 조회하고 planner.md hooks 기반으
 - `planner.md` 내용 (hooks 섹션 + file structure 섹션)
 - Jira AC 목록 (있을 경우)
 - 프로젝트 루트 경로
+
+---
+
+## 타입 소스 판별 (Spec Availability)
+
+**전제: 프론트 작업 시점에 백엔드 API(OpenAPI 스펙)는 아직 안 나와 있는 게 흔합니다.** FE/BE 병렬 개발에선 스펙이 늦게 확정됩니다. 그래서 이 스킬은 두 모드로 동작하고 — **스펙이 없으면 잠정 모드가 기본 경로**입니다. 스펙을 못 구하는 것은 예외(fallback)가 아니라 정상적인 1급 경로입니다.
+
+먼저 스펙 가용 여부를 다음 순서로 판별합니다:
+
+1. planner.md의 API/Data 섹션에 **스펙 URL/파일 경로**가 명시됨 (예: `OpenAPI: https://.../openapi.json`) → **스펙 모드**
+2. 사용자가 이번 요청에서 URL/경로 제공 → **스펙 모드**
+3. 프로젝트에 **Apidog MCP 연결됨** → **스펙 모드**
+4. 위 어느 것도 없음 (= 흔한 경우) → **잠정 모드 (기본)**
+
+> 잠정 모드로 만든 잠정 타입은, 나중에 실제 스펙이 나오면 **스펙 모드로 재실행**하여 정합합니다.
+
+### 잠정 모드 (스펙 없음 — 기본 경로)
+
+planner.md가 담은 필드 정보에서 **잠정(provisional) TypeScript 타입**을 생성합니다. 필드 소스(feature-planner가 출력):
+- **`필드 | 타입 | 컴포넌트 | 필수 | 제약` 테이블** (PRD Field → Component Mapping) — 응답/요청 필드명·타입의 1차 소스
+- **Form Schema** (`form/schema/[feature]-form.schema.ts`, Zod) — create/edit body 필드
+- Component Details의 Props/Types, Jira AC 본문
+
+규칙:
+- 생성한 인터페이스 상단에 `// TODO(OpenAPI): 백엔드 스펙 확정 시 재정합` 주석을 답니다.
+- 응답 데이터는 **MSW 목**으로 채웁니다(`msw-setup` / `unit-test-gen` 연계). **잠정 타입과 목 데이터의 shape를 반드시 일치**시킵니다 — 둘이 어긋나면 스펙 도착 후 재정합 비용이 커집니다.
+- 엔드포인트 경로는 planner.md Hook Layer 테이블의 path를 그대로 씁니다 (예: `/api/v1/masters`).
+- pagination·공통 응답 래퍼 형태는 추측하지 말고 코드베이스 기존 패턴(최근 `*.hook.ts`) 구조를 복사합니다.
+- planner.md에 필드 정보가 전혀 없으면(테이블·스키마·AC 모두 부재) → 사용자에게 데이터 모델을 물어보고 진행합니다.
+
+### 스펙 모드 (스펙 있음 — 정확 타입)
+
+OpenAPI 문서(OpenAPI 3.x / Swagger 2.0, JSON/YAML) **하나**에서 정확한 타입을 생성합니다. 특정 호스트·MCP에 종속되지 않습니다.
+
+- **소스 ① 직접 URL** — raw OpenAPI 문서를 주는 URL이면 `curl`로 받습니다:
+  ```bash
+  curl -sSL "<OPENAPI_URL>" -o /tmp/openapi.json -w "HTTP %{http_code} | %{content_type}\n"
+  ```
+  - ⚠️ **`WebFetch` 금지** — 마크다운 변환 중 JSON 본문을 버립니다. 반드시 `curl`. YAML이면 `-o /tmp/openapi.yaml` 후 `yaml.safe_load`.
+  - ⚠️ **raw 문서 엔드포인트**여야 합니다 — 문서 UI URL ≠ raw 스펙 URL인 호스트가 있습니다(Swagger UI 등). content-negotiation으로 JSON 직반환하는 곳(예: Scalar registry share URL)도, 별도 `.json`/`.yaml` 엔드포인트가 있는 곳도 있으니 호스트에 맞는 raw URL을 확인.
+- **소스 ② 로컬 파일** — 레포에 커밋된 `openapi.json` / `swagger.yaml`을 `Read`/`python`으로 로드.
+- **소스 ③ Apidog MCP (선택)** — Apidog 사용 프로젝트만. 도구 `mcp__apidog__read_project_oas_*` / `..._ref_resources_*` / `..._refresh_*` (`*`는 프로젝트별 — `ToolSearch("apidog")`로 확인).
+
+**대형 스펙 + `$ref` 처리 (스펙 모드 공통):**
+- **타겟 추출** — 스펙이 크면(수백 KB+) 전체를 context에 올리지 말고 `python`/`jq`로 필요한 path만 뽑습니다:
+  ```bash
+  python3 -c "import json; d=json.load(open('/tmp/openapi.json')); print(json.dumps(d['paths']['/api/v1/users']['get'], ensure_ascii=False, indent=2))"
+  ```
+- **`$ref` 해소** — `$ref: '#/components/schemas/User'`는 같은 문서의 `components.schemas`(Swagger 2.0은 `definitions`)에서 스키마를 꺼내 타입을 채웁니다. 안 하면 타입이 절반만 채워집니다. 중첩 `$ref`는 재귀 해소.
 
 ---
 
@@ -86,39 +135,26 @@ useZzz()            → wrapper hook           [NEW]
 ```
 
 추출 규칙:
-- `use*Query` → API Query Hook (Apidog에서 스펙 조회 필요)
+- `use*Query` → API Query Hook (타입 소스는 Phase A2에서 모드별로 결정)
 - `use*` (wrapper) → Business Logic Hook (Query Hook 래핑)
 - 목록 페이지는 항상 2-layer (useXxxQuery + useXxx)
 
-### Phase A2: Apidog MCP로 API 스펙 일괄 조회
+### Phase A2: 타입 소스 확보 (잠정 모드 / 스펙 모드)
 
-Apidog MCP 도구 3종을 사용하여 OpenAPI 스펙을 조회합니다:
-
-| 도구 | 용도 |
-|---|---|
-| `mcp__apidog__read_project_oas_*` | OAS 전체 구조 읽기 (엔드포인트 목록, `$ref` 경로 파악) |
-| `mcp__apidog__read_project_oas_ref_resources_*` | `$ref`로 참조된 개별 path/schema JSON 일괄 조회 |
-| `mcp__apidog__refresh_project_oas_*` | 최신 스펙으로 갱신 (스펙 변경이 의심될 때) |
-
-> **Tool ID 참고**: `*` 부분은 프로젝트별로 다릅니다. `ToolSearch("apidog")` 또는 `Glob`으로 실제 tool 이름을 확인하세요.
-
-#### 조회 절차
-
-1. **OAS 읽기** — `read_project_oas`로 전체 OpenAPI 스펙 구조를 확인합니다.
-2. **필요 엔드포인트 `$ref` 경로 추출** — planner.md 훅에 매핑되는 path를 찾고 `$ref` 값을 수집합니다.
-3. **상세 스펙 일괄 조회** — `read_project_oas_ref_resources`의 `path` 배열에 `$ref` 경로들을 전달하여 한 번에 조회합니다.
+먼저 **[타입 소스 판별](#타입-소스-판별-spec-availability)**으로 모드를 정합니다. 엔드포인트 경로(path)는 어느 모드든 planner.md Hook Layer 테이블에서 가져옵니다.
 
 ```
-예시:
-useUsersQuery    → $ref: /paths/_api_v1_users-GET.json    → 일괄 조회
-useMastersQuery  → $ref: /paths/_api_v1_masters-GET.json   → 일괄 조회
+예시 (양쪽 모드 공통):
+useUsersQuery    → GET /api/v1/users
+useMastersQuery  → GET /api/v1/masters
 ```
 
-각 엔드포인트에서 추출:
+**잠정 모드 (스펙 없음 — 기본):** planner.md 데이터 모델 / PRD 필드에서 잠정 타입을 만듭니다. 각 인터페이스에 `// TODO(OpenAPI): 백엔드 스펙 확정 시 재정합` 주석. 응답 shape는 MSW 목과 일치시킵니다. (Request·pagination 형태는 기존 `*.hook.ts` 패턴 복사.)
+
+**스펙 모드 (스펙 있음):** 확보한 OpenAPI 문서에서 엔드포인트별로 아래를 추출하고 `$ref`를 해소합니다(타입 소스 판별 섹션의 "대형 스펙 + `$ref` 처리" 규칙):
 - **Request**: query params, path params, request body schema
 - **Response**: response schema (data 구조, pagination 구조)
-- **HTTP method**: GET/POST/PUT/DELETE
-- **인증**: 필요 여부
+- **HTTP method** / **인증**: 필요 여부
 
 ### Phase A3: 기존 훅 패턴 파악
 
@@ -148,10 +184,12 @@ pageComponents/[feature]/hooks/use[Feature].hook.ts       ← wrapper hook (필�
 import { useQuery } from '@tanstack/react-query'
 import axios from '@/apis'
 
-// ---- Types (Apidog OAS 스펙 기반으로 생성) ----
+// ---- Types ----
+// 스펙 모드: OpenAPI 스펙 기반 / 잠정 모드: planner.md 데이터 모델 기반 (잠정)
+// TODO(OpenAPI): (잠정 모드일 때) 백엔드 스펙 확정 시 재정합
 export interface I[Feature]Item {
   id: string
-  // ... Apidog 스펙의 response schema 필드들
+  // ... response schema 필드들 (스펙 모드=스펙 / 잠정 모드=planner.md 데이터 모델)
 }
 
 export interface I[Feature]ListResponse {
@@ -165,7 +203,7 @@ export interface I[Feature]QueryParams {
   page?: number
   size?: number
   q?: string
-  // ... Apidog 스펙의 query params
+  // ... OpenAPI 스펙의 query params
 }
 
 // ---- API Path ----
@@ -238,7 +276,7 @@ export const use[Feature]DetailQuery = (id?: string) => {
 }
 ```
 
-### Phase A5: 타입 변환 규칙 (Apidog OAS → TypeScript)
+### Phase A5: 타입 변환 규칙 (OpenAPI → TypeScript)
 
 | OpenAPI 타입 | TypeScript 타입 |
 |---|---|
@@ -255,6 +293,9 @@ export const use[Feature]DetailQuery = (id?: string) => {
 ```
 ✅ API Integration 완료 (Path A: 새 훅 생성)
 
+타입 소스: 잠정 모드 (잠정 타입 — planner.md 기반, 스펙 미정)
+            ↳ 백엔드 스펙 확정 시 스펙 모드로 재실행하여 정합 필요
+
 생성된 파일:
   pageComponents/[feature]/hooks/use[Feature]Query.hook.ts
   pageComponents/[feature]/hooks/use[Feature].hook.ts
@@ -264,6 +305,8 @@ API 연동 목록:
   GET /api/v1/[feature]/{id}   → use[Feature]DetailQuery ✓
   POST /api/v1/[feature]       → use[Feature].createMutate ✓
 ```
+
+> 스펙 모드(스펙 기반)일 때는 "타입 소스: 스펙 모드 (OpenAPI 스펙 — <소스>)"로 표기하고 재정합 안내 줄은 생략합니다.
 
 ---
 
@@ -455,7 +498,7 @@ REUSE 훅이 새 타입을 정상 처리하는지 검증합니다:
 - 목록 페이지는 항상 2-layer (Query Hook + Wrapper Hook)
 - 단순 셀렉트/드롭다운 옵션 조회는 Query Hook만으로 충분
 - `refetchOnWindowFocus: false` 기본 설정
-- Apidog MCP 사용 불가 시 → planner.md의 API 경로 주석과 기존 코드베이스 패턴으로 fallback
+- **스펙이 없는 것은 fallback이 아니라 잠정 모드(기본 경로)** — planner.md/PRD 데이터 모델로 잠정 타입을 만들고 MSW 목과 shape를 맞춥니다. 스펙이 나오면 스펙 모드로 재실행해 정합 (타입 소스 판별 섹션 참고)
 - `$ref` 조회 시 여러 경로를 배열로 전달하여 한 번에 조회 (호출 횟수 최소화)
 - Path B에서는 기존 코드를 **확장만** 하고 기존 구조를 변경하지 않습니다
 - Edit 시 `replace_all: false`로 정확한 위치에만 삽입합니다
