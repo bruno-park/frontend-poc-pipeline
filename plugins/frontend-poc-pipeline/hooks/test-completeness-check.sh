@@ -13,7 +13,9 @@ if echo "$INPUT" | grep -qE '\.test\.tsx|\.spec\.ts'; then
 다음 항목을 반드시 확인하세요:
 
   1. RED 상태 확인 (모든 테스트가 FAIL이어야 함)
-     npx vitest run --reporter=verbose 2>&1 | grep -E 'PASS|FAIL'
+     # 프로젝트에 설정된 러너로 run-once (conventions §13). scripts.test(watch) 직접 실행 금지.
+     # Jest:   npx jest --reporter=... 또는 npx jest 2>&1 | grep -E 'PASS|FAIL|✓|✗'
+     # Vitest: npx vitest run --reporter=verbose 2>&1 | grep -E 'PASS|FAIL'
 
   2. AC 커버리지 확인
      - Jira 티켓의 AC 항목이 모두 테스트로 존재하는지 대조

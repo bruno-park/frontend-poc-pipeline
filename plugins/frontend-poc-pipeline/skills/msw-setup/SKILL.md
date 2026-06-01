@@ -61,11 +61,15 @@ export const handlers = [
 ]
 ```
 
-### vitest.setup.ts 업데이트
+### setup 파일 업데이트 (감지된 러너 기준 — `conventions` §13.3)
+
+> Vitest면 `vitest.setup.ts`, Jest(next/jest)면 `jest.setup.js`에 추가한다. Jest는 `beforeAll/afterEach/afterAll`이 전역이므로 `vitest` import가 필요 없다.
+
 ```typescript
+// Vitest — vitest.setup.ts
 import '@testing-library/jest-dom'
 import { server } from './tests/mocks/server'
-import { beforeAll, afterEach, afterAll } from 'vitest'
+import { beforeAll, afterEach, afterAll } from 'vitest' // Jest(jest.setup.js): 이 줄 제거 (전역)
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }))
 afterEach(() => server.resetHandlers())
@@ -154,7 +158,7 @@ it('API 에러 처리', async () => {
   tests/mocks/handlers/index.ts
 
 업데이트된 파일:
-  vitest.setup.ts (MSW 서버 연동)
+  vitest.setup.ts 또는 jest.setup.js (감지된 러너의 setup 파일 — MSW 서버 연동)
 
 사용 방법:
   - 기본 핸들러: tests/mocks/handlers/index.ts에 추가

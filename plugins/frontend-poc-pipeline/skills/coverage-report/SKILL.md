@@ -1,6 +1,6 @@
 ---
 name: coverage-report
-description: vitest 단위 테스트 + Playwright E2E 커버리지를 실행하고 AC 항목별 커버리지를 분석해 Jira 티켓에 자동 기록합니다
+description: 프로젝트에 설정된 테스트 러너(Jest/Vitest)로 단위 커버리지 + (있으면) E2E를 실행하고 AC 항목별 커버리지를 분석해 Jira 티켓에 자동 기록합니다
 ---
 
 # Coverage Report
@@ -21,56 +21,57 @@ GREEN 단계 완료 후 테스트 커버리지를 측정하고 Jira AC 합격 �
 
 ## Phase 1: 커버리지 실행
 
-### 사전 확인: 테스트 인프라 존재 여부
+### 사전 확인: 테스트 러너 감지 (`conventions` §13.1)
+
+> 프로젝트에 설정된 러너를 그대로 따른다. Jest면 Jest로, Vitest면 Vitest로 커버리지를 측정한다.
 
 ```
 Bash: cat package.json | grep -E "vitest|jest"
+Glob: jest.config.*, vitest.config.*, vite.config.ts
 ```
 
-**vitest/jest가 없으면** → 즉시 중단 후 안내:
+**Jest/Vitest 둘 다 없으면** → 즉시 중단 후 안내 (설치는 opt-in, §13.4):
 ```
-❌ 테스트 인프라가 설치되어 있지 않습니다.
+❌ 테스트 러너가 설치되어 있지 않습니다.
 
-커버리지 측정 전에 먼저 테스트를 설치하세요:
+커버리지 측정 전에 먼저 테스트 러너를 설치하세요 (파이프라인 기본값 Vitest):
   /vitest-setup          → Vitest + RTL 자동 설치
   /unit-test-gen WP-XXXX → 단위 테스트 작성
 
 설치 후 다시 /coverage-report WP-XXXX 를 실행하세요.
 ```
 
-### vitest 커버리지 설정 확인
+### 커버리지 provider 설정 확인 (감지된 러너 기준)
 
-```
-Glob: vitest.config.ts, vite.config.ts
-Grep: coverage
-```
+| 러너 | 확인 | 누락 시 안내 |
+|------|------|------|
+| **Jest** | `jest.config.*` 의 `collectCoverage`/`coverageThreshold` (next/jest는 기본 내장) | "jest.config에 `coverageThreshold` 추가 권장" |
+| **Vitest** | `@vitest/coverage-v8`(또는 istanbul) deps + `vitest.config` 의 `coverage` | "npm i -D @vitest/coverage-v8 후 vitest.config에 coverage 설정 추가" |
 
-`@vitest/coverage-v8` 또는 `@vitest/coverage-istanbul` 없으면:
-```
-사용자에게 알림: "npm install -D @vitest/coverage-v8 후 vitest.config.ts에 coverage 설정 추가 필요"
-```
-
-### 단위 테스트 커버리지 실행
+### 단위 테스트 커버리지 실행 (§13.2)
 
 ```bash
-npx vitest run pageComponents/[feature] --coverage --reporter=verbose 2>&1
+# Jest:   npx jest pageComponents/[feature] --coverage 2>&1
+# Vitest: npx vitest run pageComponents/[feature] --coverage --reporter=verbose 2>&1
 ```
+
+> `scripts.test`(예: `jest --watch`)를 그대로 실행하지 말 것 (§13.2).
 
 ---
 
 ## Phase 1.5: E2E 테스트 실행
 
-### Playwright 존재 여부 확인
+### E2E 러너 존재 여부 확인 (§13.5)
 
 ```
-Glob: playwright.config.ts
+Glob: playwright.config.*, cypress.config.*
 Glob: e2e/**/*.spec.ts
 ```
 
-**playwright.config.ts가 없거나 e2e 테스트 파일이 없으면** → E2E 섹션 스킵하고 Phase 2로 진행. 안내 추가:
+**E2E 러너 config가 없거나 e2e 테스트 파일이 없으면** → E2E 섹션 스킵하고 Phase 2로 진행 (정상 폴백, 자동 설치 안 함). 안내 추가:
 ```
-⚠️ E2E 테스트가 없습니다. E2E 커버리지는 생략합니다.
-  /e2e-test-gen WP-XXXX → Playwright E2E 테스트 작성
+⚠️ E2E 러너/테스트가 없습니다. E2E 커버리지는 생략합니다.
+  /e2e-test-gen WP-XXXX → E2E 테스트 작성 (E2E 러너 도입은 별도 opt-in)
 ```
 
 ### E2E 테스트 실행

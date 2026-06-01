@@ -26,8 +26,11 @@ description: TDD REFACTOR phase - GREEN 통과 후 프로젝트 컨벤션에 맞
 
 ### 1. 단위 테스트 GREEN 확인 (필수)
 
+> **테스트 러너는 `conventions` 스킬 §13을 기준으로 감지한다** (Jest/Vitest 프로젝트 설정 우선). `$TEST_CMD` = §13.2의 run-once 커맨드. `scripts.test`를 그대로 실행하지 말 것(watch 무한 대기).
+
 ```bash
-npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -20
+# Jest:   npx jest pageComponents/[feature] 2>&1 | tail -20
+# Vitest: npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -20
 ```
 
 - 모든 테스트 PASS → 계속
@@ -43,13 +46,13 @@ Glob: e2e/[feature]/**/*.spec.ts
 - E2E 파일 없음 → 단위 테스트만으로 진행 (이하 E2E 단계 스킵)
 - E2E 파일 있음 → 2-2로 진행
 
-**2-2. Playwright 설치 확인:**
+**2-2. E2E 러너 설치 확인 (§13.5):**
 ```bash
 npx playwright --version 2>&1 | head -1
 ```
 
 - 버전 출력됨 → 2-3으로 진행
-- 에러 (미설치) → 사용자에게 알림: "Playwright가 설치되지 않았습니다. `npx playwright install`로 설치하거나, E2E 검증 없이 진행합니다." → 단위 테스트만으로 진행
+- 에러 (미설치) → **자동 설치하지 않는다.** "E2E 러너 미설치 → E2E 검증 없이 단위 테스트만으로 진행" (§13.5의 정상 폴백). 도입은 별도 opt-in 안내만.
 
 **2-3. 앱 포트 자동 감지:**
 
@@ -139,9 +142,10 @@ planner.md를 읽어 구현 의도와 비교.
 | TODO/FIXME 주석 처리 | Grep: TODO, FIXME |
 | 콘솔 로그 제거 | Grep: console.log |
 
-각 변경 후 즉시 단위 테스트 실행 (E2E는 Phase 5에서 최종 검증):
+각 변경 후 즉시 단위 테스트 실행 (`$TEST_CMD`, §13.2 — E2E는 Phase 5에서 최종 검증):
 ```bash
-npx vitest run pageComponents/[feature] 2>&1 | tail -5
+# Jest:   npx jest pageComponents/[feature] 2>&1 | tail -5
+# Vitest: npx vitest run pageComponents/[feature] 2>&1 | tail -5
 ```
 
 ---
@@ -222,10 +226,11 @@ export default ComponentName
 
 ## Phase 5: 최종 GREEN 검증
 
-### 1. 단위 테스트
+### 1. 단위 테스트 (`$TEST_CMD`, §13.2)
 
 ```bash
-npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -30
+# Jest:   npx jest pageComponents/[feature] 2>&1 | tail -30
+# Vitest: npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -30
 ```
 
 **모든 단위 테스트 PASS 확인.**

@@ -193,8 +193,8 @@ to-be: 수량 배지 컴포넌트 추가, 타이포그래피를 디자인 시스
 PR 생성 전 아래 항목을 자동으로 검증합니다. **모든 항목 통과 후** PR을 생성합니다.
 
 ```bash
-# 1. 테스트 전체 PASS 확인
-npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -5
+# 1. 테스트 전체 PASS 확인 (감지된 러너 — Jest: npx jest … / Vitest: npx vitest run … ; conventions §13)
+$TEST_CMD pageComponents/[feature] 2>&1 | tail -5
 
 # 2. console.log 잔존 확인
 git diff main...HEAD | grep -n "console.log"

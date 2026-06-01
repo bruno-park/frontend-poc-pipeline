@@ -127,15 +127,22 @@ planner.md의 AC, Validation Rules, Component Spec을 분석하여 테스트 케
 
 > `unit-test-gen` 스킬 가이드를 따르되, TDD RED 검증이 필수입니다.
 
-### Step 1. 프로젝트 테스트 설정 확인
+### Step 1. 프로젝트 테스트 러너 + 설정 확인
+
+> **러너 감지는 `conventions` 스킬 §13(Test Runner Detection & Adaptation)을 기준으로 한다.**
+> 프로젝트에 이미 설정된 러너(Jest/Vitest)를 그대로 따르고, 없을 때만 설치를 안내한다 (§13.4).
 
 ```
-Glob: vitest.config.ts, vitest.config.js, vite.config.ts
+# 1. 러너 감지 (§13.1): jest.config.* / vitest.config.* / vite.config.ts / package.json deps
+Glob: jest.config.*, vitest.config.*, vite.config.ts
+# 2. 기존 테스트 패턴/헬퍼
 Glob: **/*.test.tsx (최근 3개 → 패턴 파악)
 Grep: renderWithProviders, createWrapper, @testing-library/react
 ```
 
-기존 헬퍼 패턴이 있으면 반드시 재사용.
+- 감지된 러너(Jest 또는 Vitest)에 맞춰 이후 테스트 파일의 import/모킹 API를 §13.3 표대로 생성한다.
+- 러너가 전혀 없으면 §13.4에 따라 설치를 안내(opt-in)하되, 테스트 파일은 미리 작성한다.
+- 기존 헬퍼 패턴이 있으면 반드시 재사용.
 
 ### Step 2. 테스트 파일 생성
 
@@ -150,10 +157,10 @@ Phase 1 매핑 테이블 기준으로 파일별 테스트 작성.
 테스트 파일 위치: pageComponents/[feature]/hooks/useFeature.hook.test.ts
 ```
 
-**테스트 파일 구조:**
+**테스트 파일 구조:** (아래는 Vitest 예시 — **Jest 프로젝트면 §13.3 표대로 치환**: `vi.*`→`jest.*`, vitest import 제거(전역 사용))
 
 ```typescript
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest' // Jest: 이 줄 제거 (전역), vi → jest
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -200,11 +207,14 @@ describe('ComponentName', () => {
 
 ### Step 3. RED 상태 검증 (필수)
 
-테스트 파일 작성 완료 후 즉시 실행:
+테스트 파일 작성 완료 후 즉시 실행 (`$TEST_CMD` = §13.2의 감지된 러너 run-once 커맨드):
 
 ```bash
-npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -40
+# Jest:   npx jest pageComponents/[feature] 2>&1 | tail -40
+# Vitest: npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -40
 ```
+
+> ⚠️ `package.json` 의 `scripts.test`(예: `jest --watch`)를 그대로 실행하지 말 것 — 무한 대기 위험 (§13.2).
 
 **판정:**
 
@@ -224,15 +234,21 @@ npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -40
 
 > `e2e-test-gen` 스킬 가이드를 따르되, TDD RED 검증이 필수입니다.
 
-### Step 1. Playwright 인프라 확인
+### Step 1. E2E 러너 인프라 확인 (§13.5)
+
+> **E2E 러너는 자동 설치/스캐폴딩하지 않는다.** 프로젝트에 이미 설정돼 있을 때만 진행하고, 없으면 단위 테스트만으로 완료하는 것이 정상 1급 경로다 (§13.5).
 
 ```
-Glob: playwright.config.ts → 없으면 생성
-Glob: e2e/helpers/auth.ts → 없으면 생성
-Glob: .env.test → 없으면 템플릿 생성
+Glob: playwright.config.*, cypress.config.*
+deps: @playwright/test, cypress
 ```
 
-없는 파일은 아래 형식으로 생성:
+| 상태 | 조치 |
+|------|------|
+| Playwright(또는 Cypress) 설치됨 | 해당 러너로 E2E 테스트 작성 진행 (아래 인프라 파일 중 없는 것만 보강) |
+| E2E 러너 미설치 | ⚠️ **이 Phase를 건너뛴다.** 완료 리포트에 "E2E 러너 미설치 → 단위 테스트만 작성. 도입 원하면 `@playwright/test` 설치(별도 opt-in)" 안내 |
+
+E2E 러너가 설치된 경우, 없는 인프라 파일은 아래 형식으로 생성:
 
 **playwright.config.ts:**
 ```typescript

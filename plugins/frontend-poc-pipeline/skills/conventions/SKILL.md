@@ -473,3 +473,71 @@ import Image from 'next/image';
 - ❌ `<img>` 태그 — Next.js `Image` 컴포넌트 사용
 - ❌ `data-testid` 셀렉터 — ARIA role/text 기반 셀렉터 사용
 - ❌ Zustand session store로 URL-synced 상태 관리 — `useUrlQuery` 사용
+
+---
+
+## 13. Test Runner Detection & Adaptation (테스트 러너 비종속)
+
+> 테스트 관련 스킬(`/test-writer`, `/unit-test-gen`, `/refactor`, `/coverage-report`, `/hotfix`, `/e2e-test-gen` 등)은 이 섹션을 **단일 기준(SSOT)** 으로 삼는다.
+
+**핵심 원칙: 프로젝트에 이미 설정된 테스트 러너를 그대로 따른다. 없을 때만 설치를 안내한다 (opt-in). 임의로 다른 러너로 마이그레이션하지 않는다.**
+
+### 13.1 단위 테스트 러너 감지 (project-first)
+
+다음을 확인하고 **먼저 매칭되는 러너**를 채택한다:
+
+```bash
+# 설정 파일
+Glob: jest.config.*, vitest.config.*, vite.config.ts
+# 통합/의존성
+grep -lE "next/jest|createJestConfig" jest.config.* next.config.* 2>/dev/null
+node -e "const p=require('./package.json'); console.log(JSON.stringify({jestField:!!p.jest, dev:Object.keys(p.devDependencies||{}), dep:Object.keys(p.dependencies||{})}))"
+```
+
+| 신호 (먼저 매칭되는 것 우선) | 러너 |
+|------|------|
+| `jest.config.*` 존재 / `package.json` 의 `"jest"` 필드 / `next/jest`(`createJestConfig`) 사용 / deps 에 `jest` | **Jest** |
+| `vitest.config.*` / `vite.config.ts` 의 `test` 블록 / deps 에 `vitest` | **Vitest** |
+| 위 신호가 모두 없음 | **none (미설치)** |
+
+### 13.2 실행 커맨드 ($TEST_CMD) — `scripts.test`를 그대로 실행하지 않는다
+
+`package.json` 의 `scripts.test`는 **러너 식별 용도로만** 읽는다. 그 값이 watch 모드(`jest --watch`, 인자 없는 `vitest`)이면 그대로 실행할 때 비대화형 에이전트 세션에서 **무한 대기**한다. 따라서 항상 아래의 run-once 커맨드를 **직접 구성**해서 실행한다 (`$TEST_CMD` = 감지된 러너의 run-once 커맨드):
+
+| 러너 | 단일 실행 (RED/GREEN 검증) | 커버리지 |
+|------|------|------|
+| **Jest** | `npx jest <path> 2>&1 \| tail -40` | `npx jest <path> --coverage 2>&1` |
+| **Vitest** | `npx vitest run <path> --reporter=verbose 2>&1 \| tail -40` | `npx vitest run <path> --coverage 2>&1` |
+
+> Jest는 기본이 run-once다. Vitest는 반드시 `run` 서브커맨드를 붙여야 watch로 빠지지 않는다.
+
+### 13.3 테스트 파일 작성 — 러너별 API 적응
+
+감지된 러너에 맞춰 import/모킹 API를 생성한다. (스킬 템플릿은 Vitest 표기를 예시로 두지만, **Jest 프로젝트면 아래 표대로 치환**한다.)
+
+| 항목 | Jest (next/jest) | Vitest |
+|------|------|------|
+| describe/it/expect | 전역 사용 (import 불필요) | `import { describe, it, expect } from 'vitest'` (globals:true면 생략 가능) |
+| mock 함수 | `jest.fn()` | `vi.fn()` |
+| 모듈 모킹 | `jest.mock()` | `vi.mock()` |
+| spy | `jest.spyOn()` | `vi.spyOn()` |
+| mock 초기화 | `jest.clearAllMocks()` | `vi.clearAllMocks()` |
+| 타입 모킹 | `jest.mocked(axios)` | `vi.mocked(axios)` |
+| setup 파일 | `jest.setup.js` | `vitest.setup.ts` |
+
+공통: `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`, `renderHook`, `waitFor`는 두 러너에서 동일하게 동작한다. `data-testid` 금지 규칙도 동일.
+
+### 13.4 미설치(none) 처리 — 설치는 opt-in
+
+- 단위 테스트 러너가 전혀 없을 때만: "테스트 러너가 없습니다. 파이프라인 기본값은 Vitest입니다 — `/vitest-setup`으로 설치할까요?" 로 안내하고 사용자 동의 시 설치한다. 설치 전이라도 테스트 파일은 미리 작성해 둔다.
+- **이미 Jest가 있으면 Vitest로 마이그레이션하지 않는다.** Jest를 그대로 사용한다.
+
+### 13.5 E2E 러너 감지 (Playwright/Cypress)
+
+```bash
+Glob: playwright.config.*, cypress.config.*
+deps: @playwright/test, cypress
+```
+
+- 설치돼 있으면 해당 러너로 진행.
+- **없으면 자동 설치/스캐폴딩하지 않는다.** "E2E 러너 미설치 → 단위 테스트만으로 진행"이 정상 1급 폴백이다. 도입(`@playwright/test` 설치 + config + `e2e/` 구성)은 별도 opt-in 작업으로 **안내만** 한다.

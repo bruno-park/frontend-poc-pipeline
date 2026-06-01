@@ -21,9 +21,21 @@ description: planner.md와 Jira AC를 기반으로 Playwright E2E 테스트를 T
 
 ---
 
-## Phase 0: Playwright 인프라 확인
+## Phase 0: E2E 러너 설치 게이트 (§13.5)
 
-### 1. 필수 파일 확인 (Glob)
+> **E2E 러너(Playwright)는 자동 설치하지 않는다.** 미설치 상태는 정상 1급 폴백이다 — "단위 테스트만으로 진행"으로 안내한다.
+
+### 0. Playwright 설치 여부 확인 (먼저)
+```
+deps: @playwright/test 존재?  /  npx playwright --version
+```
+
+| 상태 | 조치 |
+|------|------|
+| 설치됨 | 아래 1번(인프라 파일 확인)으로 진행 |
+| **미설치** | ⚠️ **STOP** — 자동 설치/스캐폴딩하지 않는다. 아래 안내 후 종료:<br>"E2E 러너(Playwright)가 설치되어 있지 않습니다. 이 PoC는 단위 테스트(Jest/Vitest)만으로 진행하는 것이 기본입니다. E2E를 도입하려면 별도 opt-in 작업으로 `yarn add -D @playwright/test` + `npx playwright install` + config + `e2e/` 구성을 진행할까요?" |
+
+### 1. 필수 파일 확인 (Playwright 설치된 경우)
 ```
 playwright.config.ts  → 없으면 Phase 1에서 생성 지시
 e2e/                  → 없으면 mkdir

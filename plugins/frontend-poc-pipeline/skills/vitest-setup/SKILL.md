@@ -23,10 +23,21 @@ Glob: jest.config.*, jest.setup.*, vitest.config.*
 Glob: **/*.test.ts, **/*.spec.ts (최대 5개)
 ```
 
-분기:
-- **jest.setup.js 있음** → 마이그레이션 모드 (Phase 2B)
-- **아무것도 없음** → 신규 설치 모드 (Phase 2A)
+분기 (**프로젝트 우선 원칙** — `conventions` §13.4):
+- **Jest가 이미 설정됨** (jest.config.* / next/jest / jest.setup.* / deps에 jest) → **기본은 "Jest를 그대로 사용" 안내 후 종료.** Jest는 완전한 단위 테스트 러너이므로 마이그레이션이 필요 없다. 사용자가 **명시적으로 Vitest 전환을 요청한 경우에만** Phase 2B(마이그레이션)로 진행한다.
+- **아무것도 없음** → 신규 설치 모드 (Phase 2A) — Vitest는 파이프라인의 greenfield 기본값
 - **vitest 있음** → "이미 설치됨" 안내 후 config 점검만
+
+**Jest 감지 시 기본 출력 (마이그레이션 안 함):**
+```
+✅ 이 프로젝트는 이미 Jest가 설정되어 있습니다. 테스트는 Jest로 진행합니다.
+   (conventions §13: 프로젝트에 설정된 러너 우선)
+
+   실행: npx jest <path>        (watch가 아닌 run-once)
+   커버리지: npx jest --coverage
+
+Vitest로 전환을 원하면 "vitest로 마이그레이션" 이라고 명시해 주세요 → Phase 2B 진행.
+```
 
 ---
 
@@ -107,7 +118,9 @@ import '@testing-library/jest-dom'
 
 ---
 
-## Phase 2B: Jest → Vitest 마이그레이션
+## Phase 2B: Jest → Vitest 마이그레이션 (opt-in 전용)
+
+> ⚠️ **사용자가 명시적으로 Vitest 전환을 요청한 경우에만** 실행한다. Jest가 이미 동작 중이면 기본 동작은 "Jest 그대로 사용"이다 (Phase 1 참조). 무단 마이그레이션 금지.
 
 기존 jest.setup.js가 있는 경우:
 

@@ -16,8 +16,7 @@ cat <<'EOF'
 다음 항목이 모두 완료되었는지 확인하세요:
 
   1. /code-review 실행 완료 (Critical/High 이슈 0개)
-  2. 모든 테스트 GREEN
-     npx vitest run
+  2. 모든 테스트 GREEN (프로젝트 러너로 run-once — Jest: npx jest / Vitest: npx vitest run ; conventions §13)
   3. TypeScript 빌드 오류 없음
      npx tsc --noEmit
 

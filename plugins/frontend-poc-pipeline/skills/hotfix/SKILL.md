@@ -98,8 +98,11 @@ describe('[HOTFIX] WP-XXXX — [버그 요약]', () => {
 
 ### Step 3: RED 확인
 
+> 테스트 러너는 `conventions` §13에서 감지(Jest/Vitest, 프로젝트 우선). `$TEST_CMD`는 §13.2의 run-once 커맨드. `scripts.test`(watch) 직접 실행 금지.
+
 ```bash
-npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -20
+# Jest:   npx jest pageComponents/[feature] 2>&1 | tail -20
+# Vitest: npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -20
 ```
 
 버그 재현 테스트가 FAIL 상태인지 확인 후 진행합니다.
@@ -123,11 +126,11 @@ npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -20
 ### 수정 후 검증
 
 ```bash
-# 버그 재현 테스트 PASS 확인
-npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -20
+# 버그 재현 테스트 PASS 확인 (Jest: npx jest … / Vitest: npx vitest run …)
+$TEST_CMD pageComponents/[feature] 2>&1 | tail -20
 
 # 기존 테스트 회귀 확인
-npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | grep -E "PASS|FAIL"
+$TEST_CMD pageComponents/[feature] 2>&1 | grep -E "PASS|FAIL|✓|✗"
 ```
 
 **합격 기준:**

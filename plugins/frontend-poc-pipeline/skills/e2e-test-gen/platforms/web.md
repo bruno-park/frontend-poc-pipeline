@@ -16,9 +16,18 @@
 
 ---
 
-## Phase 0: Playwright 인프라 확인
+## Phase 0: E2E 러너 설치 게이트 (§13.5)
 
-### 1. 필수 파일 확인 (Glob)
+> **Playwright는 자동 설치하지 않는다.** 미설치는 정상 폴백 — "단위 테스트만으로 진행" 안내 후 종료.
+
+### 0. Playwright 설치 여부 확인 (먼저)
+```
+deps: @playwright/test 존재?  /  npx playwright --version
+```
+- 설치됨 → 1번으로 진행
+- **미설치** → ⚠️ STOP. 자동 설치/스캐폴딩하지 않고 안내: "E2E 러너 미설치 → 단위 테스트만으로 진행. 도입은 `yarn add -D @playwright/test` + `npx playwright install`(별도 opt-in)."
+
+### 1. 필수 파일 확인 (Playwright 설치된 경우)
 ```
 playwright.config.ts  → 없으면 Phase 1에서 생성 지시
 e2e/                  → 없으면 mkdir

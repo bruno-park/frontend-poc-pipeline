@@ -96,8 +96,11 @@ Bash: git branch --show-current             → 브랜치 생성 여부 (Phase 1
 
 ### 3. 테스트 상태 확인
 
+> 러너는 `conventions` §13에서 감지 (Jest/Vitest, 프로젝트 우선). `scripts.test`(watch) 직접 실행 금지.
+
 ```bash
-npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -5
+# Jest:   npx jest pageComponents/[feature] 2>&1 | tail -5
+# Vitest: npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -5
 ```
 
 - 파일 없음 (import error) → Phase 4 완료, Phase 5 미완료
@@ -260,7 +263,8 @@ npx vitest run pageComponents/[feature] --reporter=verbose 2>&1 | tail -5
 
 **Quality Gate**:
 ```bash
-npx vitest run pageComponents/[feature]  # 모든 테스트 PASS
+# 감지된 러너로 run-once (Jest: npx jest … / Vitest: npx vitest run …) — 모든 테스트 PASS
+$TEST_CMD pageComponents/[feature]
 ```
 
 ---

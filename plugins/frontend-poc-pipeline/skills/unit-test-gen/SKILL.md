@@ -15,7 +15,7 @@ description: planner.md와 Jira AC를 기반으로 단위 테스트를 TDD 방�
 2. **프로젝트 파일 감지**:
    | 감지 파일 | 플랫폼 |
    |----------|--------|
-   | `package.json` + `vitest` or `vite` | `web` |
+   | `package.json` + React (`jest`/`next/jest` or `vitest`/`vite`) | `web` |
    | `*.xcodeproj` or `Package.swift` | `ios` |
    | `build.gradle.kts` or `AndroidManifest.xml` | `android` |
    | `package.json` + SDK 구조 (no React) | `web-sdk` |
