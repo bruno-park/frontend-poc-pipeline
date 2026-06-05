@@ -2,9 +2,10 @@
 # Gate: gh pr create 실행 전 필수 체크리스트 확인
 # Trigger: PreToolUse(Bash) — gh pr create 감지 시 발동
 
-set -euo pipefail
-
-INPUT="${CLAUDE_TOOL_INPUT:-}"
+set -uo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+fpp_read_stdin
+INPUT="$(fpp_bash_cmd)"
 
 if ! echo "$INPUT" | grep -q 'gh pr create'; then
   exit 0

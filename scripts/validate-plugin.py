@@ -160,6 +160,23 @@ def check_hooks() -> None:
         else:
             ok(f"hook script OK: {script.relative_to(REPO_ROOT)}")
 
+    # 회귀 가드: hooks/ 의 모든 .sh 가 (a) CLAUDE_TOOL_INPUT 을 쓰지 않고(no-op 버그),
+    #            (b) bash -n 통과하는지 검사. (_lib.sh 등 비참조 스크립트 포함)
+    hooks_dir = HOOKS_JSON.parent
+    for sh in sorted(hooks_dir.glob("*.sh")):
+        text = sh.read_text(errors="replace")
+        if "CLAUDE_TOOL_INPUT" in text:
+            fail(
+                f"hook reads CLAUDE_TOOL_INPUT (존재하지 않는 env — stdin JSON 사용해야 함): "
+                f"{sh.relative_to(REPO_ROOT)}"
+            )
+        if sh not in referenced:
+            r = subprocess.run(["bash", "-n", str(sh)], capture_output=True, text=True)
+            if r.returncode != 0:
+                fail(f"hook script syntax error: {sh.relative_to(REPO_ROOT)}\n{r.stderr.strip()}")
+            else:
+                ok(f"hook script OK: {sh.relative_to(REPO_ROOT)}")
+
 
 def check_skills() -> set[str]:
     if not SKILLS_DIR.exists():

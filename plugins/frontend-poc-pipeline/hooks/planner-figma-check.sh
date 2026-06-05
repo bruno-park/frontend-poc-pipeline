@@ -2,9 +2,12 @@
 # Gate: planner.md 작성 후 Figma 내용 일치 검증 요청
 # Trigger: PostToolUse(Write) — planner.md 또는 screen-plan.md 감지 시 발동
 
-set -euo pipefail
-
-INPUT="${CLAUDE_TOOL_INPUT:-}"
+set -uo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+fpp_read_stdin
+# 입력은 stdin JSON (환경변수 입력이 아님)
+INPUT="$(fpp_file_path)
+$(fpp_write_text)"
 
 if echo "$INPUT" | grep -qE 'planner\.md|screen-plan\.md'; then
   cat <<'EOF'

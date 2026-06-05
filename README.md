@@ -75,11 +75,32 @@ Claude Code plugin marketplace for an AI-driven frontend PoC pipeline:
 
 ## Hooks
 
-플러그인 활성화 시 자동 등록되는 보조 훅 (`plugins/frontend-poc-pipeline/hooks/`):
+플러그인 활성화 시 `${CLAUDE_PLUGIN_ROOT}` 기반으로 자동 등록됩니다. 모든 훅은 **stdin JSON** 으로 입력을 받고(환경변수 입력 아님), 공유 라이브러리 `hooks/_lib.sh` 를 통해 입력 파싱(jq → python3 fallback)·모드 판정·출력(deny/block/advise)을 표준화합니다.
 
-- **PreToolUse `mcp__figma-dev-mode-mcp-server__.*`** — Figma MCP 서버 응답 점검
-- **PreToolUse `mcp__mcp-atlassian-*__jira_update_issue`** — PRD 필수 섹션 누락 경고 (업로드는 차단하지 않음)
-- **PostToolUse `mcp__mcp-atlassian-*__jira_update_issue`** — PRD 업로드 히스토리를 `~/.claude/prd-history.log`에 기록
+**강제(enforce) 가능 훅 — 핵심:**
+
+- **PreToolUse(Bash) `bash-safety-guard`** — 위험 명령(루트/홈/시스템 경로 `rm -rf`, fork bomb, `chmod -R 777`, `curl|sh`·`base64|sh`·`bash <(curl)` 원격 실행, `git push --force`/force refspec 등) 차단. catastrophic·난독화 사고 방지용 defense-in-depth (완전한 보안 경계는 Claude 권한 시스템).
+- **PreToolUse(Bash)/PostToolUse(Write) `secret-leak-guard`** — private key·벤더 토큰(AWS/Slack/GitHub/Google)·하드코딩 크리덴셜 노출 차단/경고.
+- **PostToolUse(Write·Edit·MultiEdit) `planner-schema-guard`** — `planner.md` 필수 섹션(컴포넌트·Hook Layer·URL state·체크리스트·`필드|타입` 표) 키워드 검증.
+- **SubagentStop `subagent-regate`** — 계획/설계 에이전트 종료 시 최근 `planner.md` 재검증(루프가드 포함, enforce 시 `decision:block`).
+- **PreToolUse(Bash) `commit-message-check` / `branch-name-check`** — Conventional Commit·브랜치 네이밍 강제(enforce 시 차단).
+
+**advisory 훅:** `planner-figma-check`, `test-completeness-check`, `code-review-gate`, `console-log-any-check`, `package-json-change-warn`, `e2e-test-gate` — 다음 단계 안내(차단 없음).
+
+### 설정 (`.fpp-hooks.json`)
+
+소비 레포 루트에 `hooks/fpp-hooks.example.json` 을 `.fpp-hooks.json` 으로 복사해 제어합니다. 기본 모드는 **`warn`**(경고만) — 검증 후 `enforce`(차단)로 승격하세요.
+
+| 키 | 의미 |
+|----|------|
+| `mode` | `warn`(기본) \| `enforce` — 전역 |
+| `hooks["<name>"]` | 훅별 `off`\|`warn`\|`enforce` 오버라이드 |
+| `protectedBranches` | force push 차단 대상 (기본 `main`/`master`/`release/*`) |
+| `disable: true` | 전체 끄기 |
+
+env 오버라이드(파일보다 우선): `FPP_HOOKS_DISABLE=1`(킬스위치), `FPP_HOOKS_MODE`, `FPP_HOOK_<NAME>`(예 `FPP_HOOK_BASH_SAFETY=enforce`).
+
+훅 동작은 `bash scripts/test-hooks.sh` (fixture 하네스)로 검증합니다.
 
 ## Validate
 

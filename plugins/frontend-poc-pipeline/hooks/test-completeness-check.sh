@@ -2,9 +2,11 @@
 # Gate: 테스트 작성 후 완전성 검증 요청
 # Trigger: PostToolUse(Write) — *.test.tsx 또는 *.spec.ts 감지 시 발동
 
-set -euo pipefail
-
-INPUT="${CLAUDE_TOOL_INPUT:-}"
+set -uo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+fpp_read_stdin
+INPUT="$(fpp_file_path)
+$(fpp_write_text)"
 
 if echo "$INPUT" | grep -qE '\.test\.tsx|\.spec\.ts'; then
   cat <<'EOF'

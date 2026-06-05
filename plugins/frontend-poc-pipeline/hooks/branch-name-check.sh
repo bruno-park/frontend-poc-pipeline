@@ -1,39 +1,25 @@
-#!/bin/bash
-# Gate: git 브랜치 생성 시 네이밍 컨벤션 강제
-# Trigger: PreToolUse(Bash) — git checkout -b / git switch -c 감지 시 발동
+#!/usr/bin/env bash
+# branch-name-check.sh — PreToolUse(Bash) git 브랜치 생성 네이밍 컨벤션 강제.
+# {type}/{TICKET-ID}-{desc}. 입력은 stdin JSON. enforce → 차단(exit 2) / warn → 경고 / off → 통과.
 
-set -euo pipefail
+set -uo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+fpp_read_stdin
 
-INPUT="${CLAUDE_TOOL_INPUT:-}"
+NAME="branch-name"
+[ "$(fpp_tool_name)" = "Bash" ] || exit 0
+MODE="$(fpp_mode "$NAME")"
+[ "$MODE" = "off" ] && exit 0
 
-if ! echo "$INPUT" | grep -qE 'git (checkout -b|switch -c)'; then
-  exit 0
-fi
+INPUT="$(fpp_bash_cmd)"
+printf '%s' "$INPUT" | grep -qE 'git (checkout -b|switch -c)' || exit 0
 
-BRANCH=$(echo "$INPUT" | grep -oE '(checkout -b|switch -c) [^ ]+' | awk '{print $NF}' | head -1)
+BRANCH="$(printf '%s' "$INPUT" | grep -oE '(checkout -b|switch -c) [^ ]+' | awk '{print $NF}' | head -1)"
+[ -z "$BRANCH" ] && exit 0
 
-if [ -z "$BRANCH" ]; then
-  exit 0
-fi
-
-# {type}/{ticket-id}-{description} 패턴 검증
 PATTERN='^(feat|fix|chore|docs|style|refactor|test|perf|hotfix)/[A-Z]+-[0-9]+-'
+printf '%s' "$BRANCH" | grep -qE "$PATTERN" && exit 0
 
-if ! echo "$BRANCH" | grep -qE "$PATTERN"; then
-  cat <<'EOF'
-[branch-name-check] 브랜치 네이밍 컨벤션 미준수.
-
-올바른 형식:
-  {type}/{ticket-id}-{description}
-
-  type: feat | fix | chore | docs | style | refactor | test | perf | hotfix
-
-예시:
-  feat/WP-1234-login-page
-  fix/WP-5678-null-pointer-fix
-  chore/WP-9999-update-deps
-
-/branch-from-ticket 스킬을 사용하면 올바른 브랜치명이 자동 생성됩니다.
-EOF
-  exit 1
-fi
+REASON="브랜치 네이밍 컨벤션 미준수: '$BRANCH' — {type}/{TICKET-ID}-{desc}"
+FIX="예) feat/WP-1234-login-page. /branch-from-ticket 스킬이 올바른 이름을 자동 생성합니다."
+if [ "$MODE" = "enforce" ]; then fpp_deny "$NAME" "$REASON" "$FIX"; else fpp_advise "$NAME" "$REASON" "$FIX"; fi

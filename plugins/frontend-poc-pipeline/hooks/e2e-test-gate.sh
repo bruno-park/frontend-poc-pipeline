@@ -2,9 +2,11 @@
 # Gate: E2E 테스트 파일 작성 후 실행 가이드
 # Trigger: PostToolUse(Write) — *.e2e.ts / *.e2e.tsx / playwright 관련 파일 감지 시 발동
 
-set -euo pipefail
-
-INPUT="${CLAUDE_TOOL_INPUT:-}"
+set -uo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+fpp_read_stdin
+INPUT="$(fpp_file_path)
+$(fpp_write_text)"
 
 if ! echo "$INPUT" | grep -qE '\.e2e\.(ts|tsx)|playwright'; then
   exit 0

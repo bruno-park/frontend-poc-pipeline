@@ -6,9 +6,22 @@
 ## [Unreleased]
 
 ### Added
+- **Hooks 강화 (WP-8982) — advisory → 강제(enforce) 가능 전환.** 모든 훅을 올바른 Claude Code 계약(stdin JSON / exit 2 / Stop·SubagentStop `decision:block`)으로 재구축.
+  - `hooks/_lib.sh` — 공유 라이브러리: stdin JSON 파싱(jq → python3 fallback), `.fpp-hooks.json`+env 모드 판정(`warn`/`enforce`/`off`, 킬스위치), deny/block/advise 출력(remediation 포함), `$TMPDIR` 루프가드, planner 검증 헬퍼.
+  - `bash-safety-guard`(PreToolUse:Bash) — 위험/난독화 명령 하이브리드 차단(루트·시스템경로 `rm -rf`·fork bomb·`chmod -R 777`·`curl|sh`·`base64|sh`·`bash <(curl)`·force push/refspec). 완전한 보안 경계가 아닌 defense-in-depth.
+  - `secret-leak-guard`(PreToolUse:Bash + PostToolUse:Write) — private key·벤더 토큰(AWS/Slack/GitHub/Google)·하드코딩 크리덴셜 차단/경고.
+  - `planner-schema-guard`(PostToolUse:Write|Edit|MultiEdit) — `planner.md` 필수 섹션 키워드 검증.
+  - `subagent-regate`(SubagentStop) — 계획/설계 에이전트 종료 시 최근 `planner.md` 재검증(루프가드, enforce 시 `decision:block`).
+  - `hooks/fpp-hooks.example.json` 설정 예시 + `scripts/test-hooks.sh` fixture 하네스(78 케이스, jq·python3 fallback 양쪽).
 - `scripts/validate-plugin.py` — stdlib-only 마켓플레이스 무결성 검증기 (버전 동기화, hooks 스크립트 실존·문법, SKILL.md frontmatter, AGENTS/CLAUDE/GEMINI 라우팅 ↔ skills 일치 검사).
 - `.github/workflows/validate.yml` — push/PR 시 검증기 + `shellcheck --severity=error` 자동 실행.
 - harness 메타-스킬 기반 운영 하네스 — `.claude/agents/`에 에이전트 3명(skill-architect, routing-syncer, marketplace-validator), `.claude/skills/marketplace-stewardship/`에 오케스트레이터 스킬. CLAUDE.md에 하네스 포인터 + 변경 이력 등록. 마켓플레이스 자산 자체는 무변경 (공존 노선).
+- `validate-plugin.py` 확장 — hooks/ 의 모든 `.sh` 가 `CLAUDE_TOOL_INPUT`(존재하지 않는 env) 을 쓰면 **fail**(no-op 회귀 차단), 비참조 스크립트(`_lib.sh` 등)도 `bash -n` 검사.
+
+### Fixed
+- **기존 9개 hook 이 전부 동작하지 않던 버그 수정** — 입력을 존재하지 않는 `CLAUDE_TOOL_INPUT` 환경변수에서 읽어 항상 no-op(차단·경고 미발동)이었음. stdin JSON 파싱으로 전환해 실제 발동하도록 수정.
+- `commit-message-check`·`branch-name-check` 가 `exit 1`(non-blocking) 이라 강제되지 않던 문제 → 모드 기반 `exit 2`(enforce) 차단으로 수정.
+- `README.md` Hooks 섹션이 실제 `hooks.json` 과 불일치(figma/jira 훅 기술)하던 drift 정정.
 
 ### Changed
 - `api-integration` 스킬 Apidog MCP 비종속화 + "스펙 미정" 1급 경로화 — 백엔드 API가 아직 없는 게 흔한 FE/BE 병렬 개발 현실 반영.

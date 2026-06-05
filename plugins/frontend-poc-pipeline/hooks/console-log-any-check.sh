@@ -2,9 +2,11 @@
 # Gate: TypeScript 파일 작성 시 console.log / any 타입 즉시 감지
 # Trigger: PostToolUse(Write) — *.ts / *.tsx (비테스트 파일) 감지 시 발동
 
-set -euo pipefail
-
-INPUT="${CLAUDE_TOOL_INPUT:-}"
+set -uo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+fpp_read_stdin
+INPUT="$(fpp_file_path)
+$(fpp_write_text)"
 
 # TS/TSX 파일인지 확인
 if ! echo "$INPUT" | grep -qE '\.(ts|tsx)'; then
