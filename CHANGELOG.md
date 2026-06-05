@@ -18,6 +18,9 @@
 - harness 메타-스킬 기반 운영 하네스 — `.claude/agents/`에 에이전트 3명(skill-architect, routing-syncer, marketplace-validator), `.claude/skills/marketplace-stewardship/`에 오케스트레이터 스킬. CLAUDE.md에 하네스 포인터 + 변경 이력 등록. 마켓플레이스 자산 자체는 무변경 (공존 노선).
 - `validate-plugin.py` 확장 — hooks/ 의 모든 `.sh` 가 `CLAUDE_TOOL_INPUT`(존재하지 않는 env) 을 쓰면 **fail**(no-op 회귀 차단), 비참조 스크립트(`_lib.sh` 등)도 `bash -n` 검사.
 
+### Changed
+- advisory 안내 훅 6종(`planner-figma-check`·`test-completeness-check`·`code-review-gate`·`console-log-any-check`·`package-json-change-warn`·`e2e-test-gate`)을 단일 디스패처 `post-write-advisor`(PostToolUse:Write\|Edit\|MultiEdit)로 통합 — 경로/내용 기반 분기. 구조 중복 제거.
+
 ### Fixed
 - **기존 9개 hook 이 전부 동작하지 않던 버그 수정** — 입력을 존재하지 않는 `CLAUDE_TOOL_INPUT` 환경변수에서 읽어 항상 no-op(차단·경고 미발동)이었음. stdin JSON 파싱으로 전환해 실제 발동하도록 수정.
 - `commit-message-check`·`branch-name-check` 가 `exit 1`(non-blocking) 이라 강제되지 않던 문제 → 모드 기반 `exit 2`(enforce) 차단으로 수정.

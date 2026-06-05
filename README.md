@@ -85,7 +85,9 @@ Claude Code plugin marketplace for an AI-driven frontend PoC pipeline:
 - **SubagentStop `subagent-regate`** — 계획/설계 에이전트 종료 시 최근 `planner.md` 재검증(루프가드 포함, enforce 시 `decision:block`).
 - **PreToolUse(Bash) `commit-message-check` / `branch-name-check`** — Conventional Commit·브랜치 네이밍 강제(enforce 시 차단).
 
-**advisory 훅:** `planner-figma-check`, `test-completeness-check`, `code-review-gate`, `console-log-any-check`, `package-json-change-warn`, `e2e-test-gate` — 다음 단계 안내(차단 없음).
+**advisory 훅:**
+
+- **PostToolUse(Write·Edit·MultiEdit) `post-write-advisor`** — 작성 파일 경로/내용을 보고 다음 단계 안내(차단 없음): planner.md→Figma 갭 검증, 테스트→RED·AC, E2E→실행 가이드, 구현 tsx→`/code-review`, `console.log`/`any` 경고, `package.json`→패키지 컨벤션. (이전 6개 안내 훅을 1개로 통합.)
 
 ### 설정 (`.fpp-hooks.json`)
 
