@@ -1,52 +1,41 @@
 {
   "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/planner-figma-check.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/test-completeness-check.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/code-review-gate.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/console-log-any-check.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/package-json-change-warn.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/e2e-test-gate.sh"
-          }
-        ]
-      }
-    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
         "hooks": [
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/commit-message-check.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/branch-name-check.sh"
-          },
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/pr-gate-check.sh"
-          }
+          { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/bash-safety-guard.sh" },
+          { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/secret-leak-guard.sh" },
+          { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/commit-message-check.sh" },
+          { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/branch-name-check.sh" },
+          { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/pr-gate-check.sh" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/planner-schema-guard.sh" },
+          { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/secret-leak-guard.sh" }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/planner-figma-check.sh" },
+          { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/test-completeness-check.sh" },
+          { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/code-review-gate.sh" },
+          { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/console-log-any-check.sh" },
+          { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/package-json-change-warn.sh" },
+          { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/e2e-test-gate.sh" }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/subagent-regate.sh" }
         ]
       }
     ]

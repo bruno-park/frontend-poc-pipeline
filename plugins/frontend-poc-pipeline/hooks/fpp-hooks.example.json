@@ -1,0 +1,11 @@
+{
+  "$comment": "이 파일을 소비 레포 루트에 `.fpp-hooks.json` 으로 복사해 hook 동작을 제어한다. 모든 키는 선택. env(FPP_HOOK_<NAME>, FPP_HOOKS_MODE, FPP_HOOKS_DISABLE=1)가 파일보다 우선.",
+  "mode": "warn",
+  "disable": false,
+  "hooks": {
+    "bash-safety": "enforce",
+    "secret-leak": "enforce",
+    "planner-schema": "warn"
+  },
+  "protectedBranches": ["main", "master", "release/*"]
+}
