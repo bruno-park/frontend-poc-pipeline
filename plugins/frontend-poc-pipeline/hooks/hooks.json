@@ -10,6 +10,12 @@
           { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/branch-name-check.sh" },
           { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/pr-gate-check.sh" }
         ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/pipeline-order-guard.sh" }
+        ]
       }
     ],
     "PostToolUse": [
@@ -19,6 +25,13 @@
           { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/planner-schema-guard.sh" },
           { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/secret-leak-guard.sh" },
           { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/post-write-advisor.sh" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/stop-gate.sh" }
         ]
       }
     ],

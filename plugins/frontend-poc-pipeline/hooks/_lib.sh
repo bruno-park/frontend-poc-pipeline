@@ -205,6 +205,32 @@ fpp_planner_missing() {
   printf '%b' "$m"
 }
 
+# ── 위반 ledger (PostToolUse 기록 → Stop 게이트가 차단) ──────────────────────
+# PostToolUse 는 차단 불가하므로, 위반을 세션 ledger 에 적어두고 Stop hook 이
+# 미해결이면 턴 종료를 막는다(진짜 강제). 라인 형식: check<TAB>key<TAB>message.
+# key(보통 파일경로) 단위로 upsert/clear → 재작성 시 자동 self-heal.
+fpp_ledger_path() {
+  local dir; dir="$(fpp_guard_dir)"; mkdir -p "$dir" 2>/dev/null || true
+  printf '%s/ledger' "$dir"
+}
+fpp_ledger_clear() {   # <check> <key>
+  local check="$1" key="$2" f; f="$(fpp_ledger_path)"
+  [ -f "$f" ] || return 0
+  awk -F'\t' -v c="$check" -v k="$key" '!($1==c && $2==k)' "$f" > "$f.tmp" 2>/dev/null \
+    && mv "$f.tmp" "$f" 2>/dev/null || true
+}
+fpp_ledger_record() {  # <check> <key> <message>
+  local check="$1" key="$2" msg="$3" f; f="$(fpp_ledger_path)"
+  fpp_ledger_clear "$check" "$key"
+  printf '%s\t%s\t%s\n' "$check" "$key" "$msg" >> "$f" 2>/dev/null || true
+}
+fpp_ledger_messages() {  # stdout: "  - <message>" 목록 (없으면 빈 출력)
+  local f; f="$(fpp_ledger_path)"
+  [ -f "$f" ] || return 0
+  awk -F'\t' 'NF>=3{print "  - "$3}' "$f" 2>/dev/null
+}
+fpp_ledger_reset() { rm -f "$(fpp_ledger_path)" 2>/dev/null || true; }
+
 # ── Stop/SubagentStop 루프가드 ──────────────────────────────────────────────
 # 같은 위반(fingerprint)으로 N회 차단 후엔 통과시켜 무한루프 방지.
 # 상태는 소비 레포가 아니라 $TMPDIR 하위에 저장.

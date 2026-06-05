@@ -25,8 +25,16 @@ if [ -n "$FP" ] && [ -f "$FP" ]; then CONTENT="$(cat "$FP" 2>/dev/null)"; fi
 [ -z "$CONTENT" ] && exit 0
 
 MISSING="$(printf '%s' "$CONTENT" | fpp_planner_missing)"
-[ -z "$MISSING" ] && exit 0
+if [ -z "$MISSING" ]; then
+  fpp_ledger_clear planner "$FP"   # 이제 유효 → 미해결 표시 제거(self-heal)
+  exit 0
+fi
 
 REASON="planner.md 필수 섹션 누락:$MISSING"
 FIX="누락 섹션을 추가하세요. feature-planner 스킬 형식 참고 (컴포넌트 구조·Hook Layer·URL state·구현 체크리스트·필드|타입 표)."
-if [ "$MODE" = "enforce" ]; then fpp_feedback "$NAME" "$REASON" "$FIX"; else fpp_advise "$NAME" "$REASON" "$FIX"; fi
+if [ "$MODE" = "enforce" ]; then
+  fpp_ledger_record planner "$FP" "planner.md 필수 섹션 미완성: $FP"
+  fpp_feedback "$NAME" "$REASON" "$FIX"
+else
+  fpp_advise "$NAME" "$REASON" "$FIX"
+fi

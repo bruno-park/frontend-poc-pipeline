@@ -18,6 +18,12 @@
 - harness 메타-스킬 기반 운영 하네스 — `.claude/agents/`에 에이전트 3명(skill-architect, routing-syncer, marketplace-validator), `.claude/skills/marketplace-stewardship/`에 오케스트레이터 스킬. CLAUDE.md에 하네스 포인터 + 변경 이력 등록. 마켓플레이스 자산 자체는 무변경 (공존 노선).
 - `validate-plugin.py` 확장 — hooks/ 의 모든 `.sh` 가 `CLAUDE_TOOL_INPUT`(존재하지 않는 env) 을 쓰면 **fail**(no-op 회귀 차단), 비참조 스크립트(`_lib.sh` 등)도 `bash -n` 검사.
 
+### Added
+- **하네스 강제력 보강 (linter → harness)** — advisory를 넘어 실제로 행동을 구속하는 두 축 추가.
+  - `stop-gate`(Stop) + 위반 ledger(`_lib.sh`) — PostToolUse 훅(planner-schema·secret-leak)이 위반을 세션 ledger에 기록하고, Stop hook이 미해결이면 `decision:block`으로 **턴 종료를 차단**(루프가드). PostToolUse는 차단 불가라는 한계를 종착 게이트로 보완.
+  - `pipeline-order-guard`(PreToolUse:Write) — `pageComponents` 신규 구현 파일 생성 시 `planner.md` 선존재 + 컴포넌트면 RED 테스트 선존재 강제. planner-before-code·test-before-code 파이프라인 순서를 hook으로 강제.
+  - 기본 모드는 `warn`(가이드). 강제하려면 `.fpp-hooks.json`에서 `stop-gate`/`pipeline-order`를 `enforce`로.
+
 ### Changed
 - advisory 안내 훅 6종(`planner-figma-check`·`test-completeness-check`·`code-review-gate`·`console-log-any-check`·`package-json-change-warn`·`e2e-test-gate`)을 단일 디스패처 `post-write-advisor`(PostToolUse:Write\|Edit\|MultiEdit)로 통합 — 경로/내용 기반 분기. 구조 중복 제거.
 

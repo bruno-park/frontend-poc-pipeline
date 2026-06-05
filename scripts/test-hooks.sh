@@ -40,6 +40,7 @@ json_bash()  { J_CMD="$1"  python3 -c 'import json,os;print(json.dumps({"hook_ev
 json_write() { J_FP="$1" J_CT="${2:-}" python3 -c 'import json,os;print(json.dumps({"hook_event_name":"PostToolUse","tool_name":"Write","tool_input":{"file_path":os.environ["J_FP"],"content":os.environ["J_CT"]}}))'; }
 json_edit()  { J_FP="$1" J_NS="${2:-}" python3 -c 'import json,os;print(json.dumps({"hook_event_name":"PostToolUse","tool_name":"Edit","tool_input":{"file_path":os.environ["J_FP"],"old_string":"x","new_string":os.environ["J_NS"]}}))'; }
 json_subagent() { J_AT="$1" python3 -c 'import json,os;print(json.dumps({"hook_event_name":"SubagentStop","agent_type":os.environ["J_AT"],"session_id":"t-sess"}))'; }
+json_stop()     { printf '%s' '{"hook_event_name":"Stop"}'; }
 
 # ─────────────────────────────────────────────────────────────────────────────
 # hook 별 케이스 파일을 source (scripts/hook-tests/<hook>.cases.sh).

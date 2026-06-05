@@ -38,7 +38,11 @@ elif printf '%s' "$TEXT" | grep -qE 'sk-[A-Za-z0-9]{20,}'; then hit "API secret 
 elif printf '%s' "$TEXT" | grep -qiE '(api[_-]?key|secret|token|passwd|password|client[_-]?secret|access[_-]?key)["'"'"' ]*[:=][ ]*["'"'"'][A-Za-z0-9_./+-]{16,}["'"'"']'; then hit "하드코딩된 크리덴셜(key=\"...\")"
 fi
 
-if [ -z "$REASON" ]; then exit 0; fi
+if [ -z "$REASON" ]; then
+  # PostToolUse 깨끗한 재작성 → 이전 시크릿 표시 제거(self-heal)
+  case "$EVENT" in PostToolUse) [ -n "$FP" ] && fpp_ledger_clear secret "$FP" ;; esac
+  exit 0
+fi
 
 FIXMSG="시크릿을 코드/명령에서 제거하고 환경변수·시크릿 매니저로 옮기세요. 이미 노출됐다면 즉시 로테이트(폐기·재발급)하세요."
 LOC=""; [ -n "$FP" ] && LOC=" ($FP)"
@@ -46,7 +50,8 @@ LOC=""; [ -n "$FP" ] && LOC=" ($FP)"
 if [ "$MODE" = "enforce" ]; then
   case "$EVENT" in
     PreToolUse) fpp_deny "$NAME" "$REASON 노출 시도$LOC" "$FIXMSG" ;;
-    *)          fpp_feedback "$NAME" "$REASON 작성 감지$LOC" "$FIXMSG" ;;
+    *)          [ -n "$FP" ] && fpp_ledger_record secret "$FP" "$REASON 작성됨 — 제거+로테이트 필요: $FP"
+                fpp_feedback "$NAME" "$REASON 작성 감지$LOC" "$FIXMSG" ;;
   esac
 else
   fpp_advise "$NAME" "$REASON 감지$LOC" "$FIXMSG"

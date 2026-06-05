@@ -5,7 +5,12 @@
   "hooks": {
     "bash-safety": "enforce",
     "secret-leak": "enforce",
-    "planner-schema": "warn"
+    "planner-schema": "warn",
+    "pipeline-order": "warn",
+    "stop-gate": "warn",
+    "post-advisor": "warn",
+    "commit-msg": "warn",
+    "branch-name": "warn"
   },
   "protectedBranches": ["main", "master", "release/*"]
 }

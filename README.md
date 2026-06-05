@@ -82,8 +82,12 @@ Claude Code plugin marketplace for an AI-driven frontend PoC pipeline:
 - **PreToolUse(Bash) `bash-safety-guard`** — 위험 명령(루트/홈/시스템 경로 `rm -rf`, fork bomb, `chmod -R 777`, `curl|sh`·`base64|sh`·`bash <(curl)` 원격 실행, `git push --force`/force refspec 등) 차단. catastrophic·난독화 사고 방지용 defense-in-depth (완전한 보안 경계는 Claude 권한 시스템).
 - **PreToolUse(Bash)/PostToolUse(Write) `secret-leak-guard`** — private key·벤더 토큰(AWS/Slack/GitHub/Google)·하드코딩 크리덴셜 노출 차단/경고.
 - **PostToolUse(Write·Edit·MultiEdit) `planner-schema-guard`** — `planner.md` 필수 섹션(컴포넌트·Hook Layer·URL state·체크리스트·`필드|타입` 표) 키워드 검증.
+- **PreToolUse(Write) `pipeline-order-guard`** — `pageComponents` 아래 **새 구현 파일 생성** 시 순서 강제: feature의 `planner.md` 선존재(planner-required) + 컴포넌트면 대응 RED 테스트 선존재(tdd-required). 기존 파일 편집은 비차단.
+- **Stop `stop-gate`** — PostToolUse 훅이 ledger에 적은 미해결 위반(planner 미완성·시크릿 작성)이 남아 있으면 **턴 종료를 차단**(루프가드). PostToolUse(차단 불가)를 실질 강제로 닫는 종착 게이트.
 - **SubagentStop `subagent-regate`** — 계획/설계 에이전트 종료 시 최근 `planner.md` 재검증(루프가드 포함, enforce 시 `decision:block`).
 - **PreToolUse(Bash) `commit-message-check` / `branch-name-check`** — Conventional Commit·브랜치 네이밍 강제(enforce 시 차단).
+
+> **PostToolUse 강제를 닫으려면** `stop-gate`를 `enforce`로 두세요 — 그래야 `planner-schema`·`secret-leak(write)`의 위반이 "턴 종료 차단"으로 실제 강제됩니다(PostToolUse 자체는 차단 불가).
 
 **advisory 훅:**
 
