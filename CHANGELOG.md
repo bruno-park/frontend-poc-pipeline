@@ -3,7 +3,7 @@
 이 파일은 [Keep a Changelog](https://keepachangelog.com/) 형식을 따르고
 프로젝트는 [Semantic Versioning](https://semver.org/)을 사용합니다.
 
-## [Unreleased]
+## [0.7.0] - 2026-06-05
 
 ### Added
 - **Hooks 강화 (WP-8982) — advisory → 강제(enforce) 가능 전환.** 모든 훅을 올바른 Claude Code 계약(stdin JSON / exit 2 / Stop·SubagentStop `decision:block`)으로 재구축.
