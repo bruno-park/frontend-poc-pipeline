@@ -201,7 +201,7 @@ describe('ComponentName', () => {
 ```
 
 **금지 사항:**
-- `data-testid` 셀렉터 사용 금지 (이 프로젝트에 없음)
+- 셀렉터는 **프로젝트의 기존 테스트 패턴을 먼저 확인**해 따른다 — "data-testid 없음/금지"라고 단정하지 말 것. 실 컴포넌트 쿼리는 역할(role)·텍스트 우선이되, 기존 테스트가 mock 내부에서 `data-testid`를 쓰는 관례라면 그것을 따른다 (확인 명령: `grep -rl "data-testid" **/*.test.*`)
 - 여러 동작을 하나의 `it`에 묶지 않기
 - 구현 세부사항 테스트 금지 (className, 내부 state 직접 접근)
 
@@ -234,21 +234,34 @@ describe('ComponentName', () => {
 
 > `e2e-test-gen` 스킬 가이드를 따르되, TDD RED 검증이 필수입니다.
 
-### Step 1. E2E 러너 인프라 확인 (§13.5)
+### Step 1. E2E 러너 인프라 확인 (§13.5) — ⚠️ 추측 금지, 반드시 명령으로 검증
 
-> **E2E 러너는 자동 설치/스캐폴딩하지 않는다.** 프로젝트에 이미 설정돼 있을 때만 진행하고, 없으면 단위 테스트만으로 완료하는 것이 정상 1급 경로다 (§13.5).
+> **스킵은 "러너 미설치"일 때만 허용된다.** 러너가 설치돼 있으면 "적합도 낮음 / 데이터 시드 불가 / 단위로 충분" 같은 **주관적 근거로 건너뛰지 말 것** — 이는 검증되지 않은 가정이며, 인프라가 실제로 있는데 스킵하는 오판의 원인이다. (E2E 러너를 자동 설치/스캐폴딩하지는 않는다.)
 
+**1-1. 인프라를 실제 명령으로 확인하고 출력을 근거로 남긴다 (`Glob:`/`deps:` 추측 금지):**
+
+```bash
+# 러너 config / 설치 / npm script
+ls playwright.config.* cypress.config.* 2>/dev/null
+node -e "const p=require('./package.json');const d={...p.dependencies,...p.devDependencies};console.log('@playwright/test:',d['@playwright/test']||'none','| cypress:',d['cypress']||'none')"
+node -e "const s=require('./package.json').scripts||{};Object.entries(s).filter(([k,v])=>/play|cypress|e2e/i.test(k+v)).forEach(([k,v])=>console.log(k,'=',v))"
+# 기존 E2E spec 위치/디렉토리 구조 + 데이터 처리 방식 (가장 중요)
+find . -path ./node_modules -prune -o -name "*.spec.ts" -print 2>/dev/null | grep -iE "e2e" | head
+grep -rlE "page\.route|route\.fulfill" $(find . -path ./node_modules -prune -o -name "*.spec.ts" -print 2>/dev/null | grep -iE "e2e") 2>/dev/null | head
 ```
-Glob: playwright.config.*, cypress.config.*
-deps: @playwright/test, cypress
-```
 
-| 상태 | 조치 |
+**1-2. 판정 (명령 출력 기준으로만):**
+
+| 상태 (위 명령 출력 근거) | 조치 |
 |------|------|
-| Playwright(또는 Cypress) 설치됨 | 해당 러너로 E2E 테스트 작성 진행 (아래 인프라 파일 중 없는 것만 보강) |
-| E2E 러너 미설치 | ⚠️ **이 Phase를 건너뛴다.** 완료 리포트에 "E2E 러너 미설치 → 단위 테스트만 작성. 도입 원하면 `@playwright/test` 설치(별도 opt-in)" 안내 |
+| 러너 설치됨 (config OR deps OR e2e spec 中 하나라도 존재) | **E2E 작성 필수.** 기존 spec의 디렉토리 구조·패턴을 그대로 따른다. 주관적 근거로 스킵 불가 |
+| 러너 미설치 (위 전부 없음) | 이 Phase 스킵 가능. 완료 리포트에 **확인 명령 출력**과 함께 "미설치 → 단위만, 도입은 별도 opt-in" 기록 |
 
-E2E 러너가 설치된 경우, 없는 인프라 파일은 아래 형식으로 생성:
+**1-3. "데이터 시드 불가"는 스킵 근거가 아니다:**
+- 기존 E2E가 `page.route`/`route.fulfill`로 **API 응답을 mock**하면 실 BE·DB에 의존하지 않는다 → 미배포 API라도 mock으로 시나리오 작성 가능.
+- "BE 미배포라 E2E 못 한다"고 단정하기 **전에** 1-1의 grep으로 mock 방식을 확인할 것. mock 방식이면 미배포는 무관하다.
+
+E2E 러너가 설치된 경우, 기존 인프라(`tests/e2e/` 등)가 있으면 그 구조를 따르고, **없는 파일만** 아래 형식으로 보강 생성:
 
 **playwright.config.ts:**
 ```typescript
@@ -424,7 +437,8 @@ Tests: 9 failed, 0 passed
 | 예외 케이스 | 에러/빈 상태/권한 없음/로딩 상태 포함 | Phase 2 테스트 구조 |
 | RED 상태 | 단위 테스트 전체 FAIL (구현 코드 없음) | Phase 2 Step 3 |
 | RBAC | master/finance/CS 역할별 시나리오 포함 | Phase 1 매핑 테이블 |
-| 셀렉터 규칙 | `data-testid` 셀렉터 사용 없음 | 코드 리뷰 |
+| 셀렉터 규칙 | **프로젝트 기존 테스트 패턴 준수** (data-testid 사용 여부도 레포 관례를 확인 후 결정 — "없음/금지" 단정 금지) | 기존 `*.test.*` 확인 |
+| **E2E 커버리지** (`--all`/`--e2e`) | 러너 설치 시 **E2E 작성 필수**. 스킵은 "미설치"일 때만 가능하며 **확인 명령 출력을 리포트에 첨부**. "적합도 낮음/시드 불가" 등 주관적 스킵 금지 | Phase 3 Step 1-1 출력 |
 
 ---
 

@@ -132,10 +132,13 @@ git diff {{arg1:-main}}...HEAD
 ### Bugs & Logic Errors
 
 - Null/undefined 체크 누락
+- **`?? []` / `|| []` 기본값이 의미를 뭉개는지** — `undefined`(미제공)와 `[]`(빈/전체제외)가 다른 의미라면 collapse 금지 (NULL_CHECK_GUIDE §2)
 - 배열/객체 접근 안전성
 - async/await 에러 핸들링
 - 레이스 컨디션
 - 메모리 누수 (useEffect cleanup 누락)
+- **렌더 레벨 hide/filter ≠ 데이터 정합** — 화면에서 숨기거나 필터한 값이 **저장·제출 body에는 그대로 남는지** 확인. 숨긴 값이 서버로 전송돼 검증 에러/저장 dead-end(해제 UI 없음)를 만들 수 있다. 노출 제어 변경은 반드시 **저장/제출 경로**까지 함께 점검
+- **캐시·SSR 경로 일치** — `setQueryData`(SSR 주입)·`staleTime: Infinity` 등으로 queryFn이 재실행되지 않는 경우, queryFn에서 만든 파생값이 실제 소비처에 도달하지 않을 수 있다. 새 필드는 raw로 소비하거나 캐시 주입 지점도 동기화했는지 확인
 
 ### Performance
 

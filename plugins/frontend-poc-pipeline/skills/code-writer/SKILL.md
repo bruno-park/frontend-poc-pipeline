@@ -638,6 +638,11 @@ Before completing, verify:
 - React optimization (memo/useMemo/useCallback) per planner.md spec
 - No `cn()`, no nested ternaries, no `<img>` tag
 
+**Data Integrity** (when implementing visibility control / derived values):
+- **Render-level hide/filter ≠ data integrity** — values hidden/filtered in the UI are also stripped from the save/submit body. A leftover value can cause server validation errors / an unrecoverable save dead-end (no UI to clear it). Always check the save path, not just the render path.
+- **`?? []` / `|| []` does not collapse meaning** — if `undefined` (not provided) and `[]` (empty / none-allowed) mean different things, consume the raw field and branch on `=== undefined` (NULL_CHECK_GUIDE §2).
+- **Cache/SSR path consistency** — derived values built in a query `queryFn` may never reach consumers if the cache is injected elsewhere (e.g. `_app` `setQueryData`) with `staleTime: Infinity`. Consume the raw field, or sync the cache-injection point too.
+
 **URL Params** (only when `URL_STATE_MODE = true`):
 - URL schema matches planner.md's URL Params table
 - No Zustand session store for pagination/sort/filter
