@@ -270,7 +270,11 @@ def check_routing(skill_names: set[str]) -> None:
         if unknown:
             fail(f"{doc}: 알 수 없는 스킬 참조 {sorted(unknown)}")
             continue
-        ok(f"{doc}: routing table references {len(refs)} known skills")
+        missing = skill_names - refs
+        if missing:
+            fail(f"{doc}: 라우팅 테이블에 누락된 스킬 {sorted(missing)}")
+            continue
+        ok(f"{doc}: routing table references {len(refs)} known skills (누락 0)")
 
 
 def main() -> int:

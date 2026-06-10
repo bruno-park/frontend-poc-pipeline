@@ -12,8 +12,8 @@
 메시지가 `/` 또는 `$`로 시작하면 **즉시** 아래 경로의 SKILL.md를 읽고 실행한다. 다른 판단 없이 실행한다.
 
 ```
-/skill-name  또는  $skill-name
-  → plugins/frontend-poc-pipeline/skills/skill-name/SKILL.md 를 읽고 실행
+/<skill-name>  또는  $<skill-name>
+  → plugins/frontend-poc-pipeline/skills/<skill-name>/SKILL.md 를 읽고 실행
 ```
 
 예시:

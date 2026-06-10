@@ -3,6 +3,15 @@
 이 파일은 [Keep a Changelog](https://keepachangelog.com/) 형식을 따르고
 프로젝트는 [Semantic Versioning](https://semver.org/)을 사용합니다.
 
+## [0.7.1] - 2026-06-10
+
+### Added
+- `validate-plugin.py` 라우팅 역방향 검증 — 스킬 디렉토리가 존재하는데 AGENTS/CLAUDE/GEMINI 라우팅 테이블에서 누락되면 **fail**. (기존엔 미지 참조만 검출하고 누락은 통과하던 사각지대)
+- `code-review`/`code-writer`/`test-writer` 스킬 보강 (WP-9006/WP-9138 학습 반영) — 렌더 레벨 hide/filter ≠ 저장 경로 정합, `?? []` 의미 collapse 금지, 캐시·SSR 주입 경로 일치, E2E 인프라는 명령 출력으로만 판정(주관적 스킵 금지).
+
+### Changed
+- 라우팅 doc 3종의 shorthand 예시를 `/<skill-name>` 표기로 정정 — 실존 스킬 경로와 혼동되지 않도록 플레이스홀더임을 명시.
+
 ## [0.7.0] - 2026-06-05
 
 ### Added
