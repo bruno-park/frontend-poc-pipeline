@@ -1,12 +1,12 @@
 ---
 name: e2e-test-gen
-description: planner.md와 Jira AC를 기반으로 Playwright E2E 테스트를 TDD 방식으로 작성합니다. playwright-test-planner → generator → healer 에이전트 체이닝.
+description: planner.md와 Jira AC를 기반으로 Playwright E2E 테스트를 TDD 방식으로 작성합니다. Playwright 공식 Test Agents(`npx playwright init-agents --loop=claude` 산출물 — playwright-test-planner → generator → healer)를 감지해 체이닝하고, 없으면 내장 로직으로 직접 생성합니다.
 ---
 
 # E2E Test Generator (TDD - Playwright)
 
 `planner.md`와 Jira 수용 기준을 기반으로 **Playwright E2E 테스트를 먼저 작성**합니다.
-프로젝트의 `agents/` 디렉토리에 있는 Playwright 전용 에이전트 3종을 체이닝합니다.
+프로젝트에 [Playwright 공식 Test Agents](https://playwright.dev/docs/test-agents)(`.claude/agents/playwright-test-*`)가 생성되어 있으면 3종을 체이닝하고, 없으면 이 스킬의 내장 로직으로 직접 작성합니다.
 
 ## 트리거
 
@@ -43,23 +43,46 @@ e2e/helpers/auth.ts   → 없으면 Phase 2에서 생성
 .env.test             → 없으면 템플릿 생성
 ```
 
-### 2. 프로젝트 playwright agents 확인
+### 2. Playwright Test Agents 확인 (공식 init-agents 산출물)
+
+공식 경로 우선, 레거시 경로는 fallback으로 순서대로 Glob:
+
 ```
-Glob: agents/*playwright*.md
+1순위: .claude/agents/playwright-test-planner.md (+ -generator.md / -healer.md)
+        ← `npx playwright init-agents --loop=claude` 산출물 (Playwright v1.56+)
+2순위(플러그인 번들): frontend-poc-pipeline:playwright-test-{planner,generator,healer}
+        ← 이 플러그인 agents/에 동봉된 공식 정의 스냅샷
+3순위(레거시): agents/*playwright*.md
 ```
-- 찾으면 → 해당 에이전트 파일 경로 기억
-- 없으면 → 이 스킬 내장 로직으로 직접 실행
+
+| 결과 | 조치 |
+|------|------|
+| 프로젝트 로컬(1순위) 발견 | **에이전트 위임 모드.** `.mcp.json`에 `playwright-test` MCP 서버(`npx playwright run-test-mcp-server`) 등록 여부도 확인 — 없으면 에이전트가 브라우저 도구를 쓸 수 없으므로 `init-agents` 재실행을 안내 |
+| 로컬 없음 + 번들(2순위) 사용 | `.mcp.json`에 `playwright-test` 서버가 **등록돼 있을 때만** 번들 에이전트로 위임. 미등록이면 사용자 동의 후 해당 entry만 **병합 추가**(기존 서버 보존 — init-agents처럼 덮어쓰지 않는다) 하거나 내장 로직으로 진행 |
+| 일부만 발견 | 발견된 에이전트만 위임, 나머지 Phase는 내장 로직 |
+| MCP 미등록 + 동의 없음 | **opt-in 안내 후 내장 로직으로 진행** (§13.5 정신 — 자동 실행 금지): "공식 도입: `npx playwright init-agents --loop=claude` → `.claude/agents/` 에이전트 3종 + `.mcp.json` + `specs/` + seed 테스트 생성. ⚠️ 기존 `.mcp.json`이 있으면 **덮어쓰므로** 먼저 백업하세요." |
+
+> 번들 에이전트는 Playwright v1.59.1 시점 스냅샷이다. 프로젝트가 직접 `init-agents`를 실행하면 자기 Playwright 버전과 정확히 일치하는 정의를 갖게 되므로 항상 로컬을 우선한다.
+
+**공식 산출물 컨벤션 (에이전트 위임 모드에서 사용):**
+- `specs/` — planner가 작성하는 마크다운 테스트 계획. 1 spec ↔ 1 test file 대응이 원칙
+- `seed.spec.ts` (testDir 내) — 에이전트가 인증 등 환경 부트스트랩에 쓰는 시드 테스트. `e2e/helpers/auth.ts`의 로그인 플로우를 시드에 반영하면 에이전트가 로그인된 `page` 컨텍스트로 탐색한다
+- 에이전트 정의는 Playwright 버전 업데이트 시 `init-agents` 재실행으로 재생성하는 것이 공식 권장
 
 ---
 
 ## Phase 1: playwright-test-planner 호출
 
 ### 에이전트 존재 시
-`agents/[project]-playwright-test-planner.md` 에이전트에 위임:
+`playwright-test-planner` 서브에이전트에 위임.
+
+> planner는 `playwright-test` MCP로 **실행 중인 앱을 직접 탐색**하며 계획을 세운다.
+> 앱이 떠 있지 않으면 위임하지 말고 내장 로직으로 폴백한다 (또는 앱 실행을 먼저 안내).
 
 **전달 컨텍스트:**
 ```
 다음 planner.md를 기반으로 E2E 테스트 계획을 수립해주세요.
+산출물은 specs/[feature].md 로 저장해주세요.
 
 [planner.md 전체 내용]
 
@@ -89,17 +112,18 @@ planner.md에서 직접 E2E 시나리오 추출:
 ## Phase 2: playwright-test-generator 호출
 
 ### 에이전트 존재 시
-`agents/[project]-playwright-test-generator.md` 에이전트에 위임:
+`playwright-test-generator` 서브에이전트에 위임. generator는 셀렉터·assertion을 라이브 브라우저로 검증하며 코드를 생성한다.
 
 **전달 컨텍스트:**
 ```
-Phase 1에서 수립된 테스트 계획을 기반으로 E2E 테스트 코드를 생성해주세요.
+specs/[feature].md 테스트 계획을 기반으로 E2E 테스트 코드를 생성해주세요.
 
 테스트 계획:
-[Phase 1 결과]
+[Phase 1 결과 — specs/[feature].md]
 
 생성 규칙:
-- 파일 위치: e2e/[feature]/[scenario].spec.ts
+- 파일 위치: e2e/[feature]/[scenario].spec.ts (playwright.config의 testDir 컨벤션 준수)
+- seed 테스트(seed.spec.ts)를 환경 부트스트랩 예시로 사용
 - auth helper: e2e/helpers/auth.ts 사용
 - data-testid 셀렉터 사용 금지
 - 역할별 테스트 포함 (master/finance/CS)
@@ -214,7 +238,7 @@ BASE_URL=http://localhost:3001
 
 ---
 
-## Phase 4: playwright-test-healer 대기
+## Phase 4: 실행 + playwright-test-healer (선별 사용)
 
 생성된 테스트를 실행해서 실패 패턴을 확인합니다.
 
@@ -224,8 +248,8 @@ npx playwright test e2e/[feature]/ --reporter=list 2>&1 | tail -40
 ```
 
 실패 유형 분류:
-- `FAIL (구현 없음)` → ✅ 정상 (TDD RED 상태)
-- `FAIL (selector 오류)` → playwright-test-healer 호출
+- `FAIL (구현 없음)` → ✅ 정상 (TDD RED 상태). **healer 호출 금지** — 공식 healer는 고칠 수 없는 기능을 `test.skip`으로 바꿔버려 RED 신호가 사라진다. healer는 GREEN(code-writer 구현 완료) 이후의 회귀 수리에만 의미가 있다
+- `FAIL (selector/타이밍 오류)` → `playwright-test-healer` 서브에이전트에 위임 (에이전트 없으면 직접 수정)
 - `FAIL (auth 오류)` → .env.test 확인 필요 → 사용자에게 알림
 - `PASS` → ⚠️ 이미 구현이 있거나 테스트가 너무 약함
 
@@ -237,9 +261,10 @@ npx playwright test e2e/[feature]/ --reporter=list 2>&1 | tail -40
 ## 완료 리포트 형식
 
 ```
-✅ E2E 테스트 작성 완료
+✅ E2E 테스트 작성 완료  [모드: 공식 Test Agents 위임 | 내장 로직]
 
 생성된 파일:
+  specs/[feature].md               (에이전트 모드 — planner 산출 테스트 계획)
   e2e/[feature]/[feature].spec.ts  (시나리오 N개)
   e2e/helpers/auth.ts              (신규 생성)
   playwright.config.ts             (신규 생성)

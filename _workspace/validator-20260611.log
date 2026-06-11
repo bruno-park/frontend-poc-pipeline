@@ -1,0 +1,47 @@
+=== frontend-poc-pipeline plugin validator ===
+repo: /Users/wisebirds/WebstormProjects/poc/frontend-poc-pipeline
+
+[32m✓ version aligned: 0.7.2[0m
+[32m✓ plugin source exists: ./plugins/frontend-poc-pipeline[0m
+[32m✓ hook script OK: plugins/frontend-poc-pipeline/hooks/bash-safety-guard.sh[0m
+[32m✓ hook script OK: plugins/frontend-poc-pipeline/hooks/branch-name-check.sh[0m
+[32m✓ hook script OK: plugins/frontend-poc-pipeline/hooks/commit-message-check.sh[0m
+[32m✓ hook script OK: plugins/frontend-poc-pipeline/hooks/pipeline-order-guard.sh[0m
+[32m✓ hook script OK: plugins/frontend-poc-pipeline/hooks/planner-schema-guard.sh[0m
+[32m✓ hook script OK: plugins/frontend-poc-pipeline/hooks/post-write-advisor.sh[0m
+[32m✓ hook script OK: plugins/frontend-poc-pipeline/hooks/pr-gate-check.sh[0m
+[32m✓ hook script OK: plugins/frontend-poc-pipeline/hooks/secret-leak-guard.sh[0m
+[32m✓ hook script OK: plugins/frontend-poc-pipeline/hooks/stop-gate.sh[0m
+[32m✓ hook script OK: plugins/frontend-poc-pipeline/hooks/subagent-regate.sh[0m
+[32m✓ hook script OK: plugins/frontend-poc-pipeline/hooks/_lib.sh[0m
+[32m✓ skill OK: api-integration[0m
+[32m✓ skill OK: branch-from-ticket[0m
+[32m✓ skill OK: code-review[0m
+[32m✓ skill OK: code-writer[0m
+[32m✓ skill OK: component-audit[0m
+[32m✓ skill OK: conventions[0m
+[32m✓ skill OK: coverage-report[0m
+[32m✓ skill OK: e2e-test-gen[0m
+[32m✓ skill OK: epic-frontend-splitter[0m
+[32m✓ skill OK: feature-planner[0m
+[32m✓ skill OK: figma-jira-prd[0m
+[32m✓ skill OK: figma-prd-validator[0m
+[32m✓ skill OK: hotfix[0m
+[32m✓ skill OK: marketplace-stewardship[0m
+[32m✓ skill OK: msw-setup[0m
+[32m✓ skill OK: pull-request-description[0m
+[32m✓ skill OK: refactor[0m
+[32m✓ skill OK: release-notes[0m
+[32m✓ skill OK: spec-validator[0m
+[32m✓ skill OK: test-writer[0m
+[32m✓ skill OK: ui-builder[0m
+[32m✓ skill OK: unit-test-gen[0m
+[32m✓ skill OK: vitest-setup[0m
+[32m✓ skill OK: workflow[0m
+[32m✓ AGENTS.md: routing table references 24 known skills (누락 0)[0m
+[32m✓ CLAUDE.md: routing table references 24 known skills (누락 0)[0m
+[32m✓ GEMINI.md: routing table references 24 known skills (누락 0)[0m
+[32m✓ routing tables aligned across AGENTS.md, CLAUDE.md, GEMINI.md[0m
+
+checks passed: 41
+[32mOK[0m

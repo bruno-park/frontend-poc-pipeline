@@ -3,6 +3,19 @@
 이 파일은 [Keep a Changelog](https://keepachangelog.com/) 형식을 따르고
 프로젝트는 [Semantic Versioning](https://semver.org/)을 사용합니다.
 
+## [0.7.2] - 2026-06-11
+
+### Added
+- **Playwright 공식 Test Agents 3종 번들** — `agents/playwright-test-{planner,generator,healer}.md` (`init-agents --loop=claude` 산출물의 v1.59.1 스냅샷). 마켓플레이스 설치만으로 `frontend-poc-pipeline:playwright-test-*` 에이전트 사용 가능. 동작 조건: 소비 프로젝트 `.mcp.json`에 `playwright-test` MCP 서버 등록 + `@playwright/test` 설치. 프로젝트가 직접 `init-agents`를 실행한 경우 로컬(`.claude/agents/`)이 항상 우선(버전 정합) — 번들은 fallback.
+
+### Changed
+- `e2e-test-gen` Playwright 공식 Test Agents 통합 — 에이전트 감지를 공식 `init-agents` 산출 경로로 정정.
+  - 감지 경로: `.claude/agents/playwright-test-{planner,generator,healer}.md`(`npx playwright init-agents --loop=claude`, Playwright v1.56+) 1순위, 레거시 `agents/*playwright*.md` 2순위 fallback. (기존엔 비공식 유령 경로 `agents/[project]-playwright-test-*.md`만 글롭해 공식 산출물을 감지하지 못함)
+  - 공식 산출물 컨벤션 반영: `specs/`(planner 테스트 계획, 1 spec ↔ 1 test file), `seed.spec.ts`(환경 부트스트랩 시드), `.mcp.json`의 `playwright-test` MCP 서버(`npx playwright run-test-mcp-server`) 등록 확인.
+  - planner 위임 전제 명시: planner는 실행 중인 앱을 라이브 탐색 — 앱 미실행 시 내장 로직 폴백.
+  - **healer 선별 사용 규칙**: TDD RED("구현 없음" FAIL)에는 호출 금지 — healer가 고칠 수 없는 기능을 `test.skip` 처리해 RED 신호를 지우기 때문. selector/타이밍 오류에만 위임.
+  - 에이전트 미생성 시 §13.5 정신대로 자동 실행 없이 opt-in 안내(`init-agents`가 기존 `.mcp.json`을 덮어쓰는 점 경고 포함) 후 내장 로직 진행.
+
 ## [0.7.1] - 2026-06-10
 
 ### Added
