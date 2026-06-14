@@ -163,7 +163,7 @@ $TEST_CMD pageComponents/[feature] 2>&1 | grep -E "PASS|FAIL|✓|✗"
 ## Phase H5: PR 작성 (핫픽스 명시)
 
 ```bash
-/pull-request-description
+/create-pull-request
 ```
 
 PR에 핫픽스임을 명시합니다:

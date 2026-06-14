@@ -232,7 +232,19 @@ describe('ComponentName', () => {
 
 ## Phase 3: E2E 테스트 작성 (--e2e 또는 --all)
 
-> `e2e-test-gen` 스킬 가이드를 따르되, TDD RED 검증이 필수입니다.
+> **E2E는 `e2e-test-gen` 스킬에 위임한다 — Playwright 공식 Test Agents로 계획·작성한다.** (TDD RED 검증은 어느 경로든 필수)
+
+### 위임 (1순위): Playwright 에이전트로 계획·작성
+
+`e2e-test-gen` 스킬을 읽고 그 감지·위임 로직을 따른다:
+
+1. **감지 우선순위** — 공식 산출물 `.claude/agents/playwright-test-{planner,generator,healer}.md`(`npx playwright init-agents --loop=claude`) 1순위 → 번들 `frontend-poc-pipeline:playwright-test-*` 2순위 → 내장 로직(아래) 3순위. `.mcp.json`에 `playwright-test` MCP 서버 + `@playwright/test` 설치를 확인한다.
+2. **계획** — `playwright-test-planner`에 위임해 라이브 앱을 탐색하고 테스트 계획(`specs/`, 1 spec ↔ 1 test file)을 세운다. 앱 미실행이면 내장 로직 폴백.
+3. **작성** — `playwright-test-generator`에 위임해 spec별 테스트를 작성한다.
+4. **healer 금지(RED 맥락)** — `playwright-test-healer`는 TDD RED("구현 없음" FAIL)에 **호출하지 않는다** (healer가 고칠 수 없는 케이스를 `test.skip` 처리해 RED 신호를 지움). selector/타이밍 오류 수정에만 별도로 위임한다.
+5. 에이전트·러너 미설치면 §13.5대로 자동 설치 없이 opt-in 안내 후 아래 내장 로직으로 진행한다.
+
+### 내장 폴백 로직 (2순위): 에이전트/러너 미설치 시 직접 작성
 
 ### Step 1. E2E 러너 인프라 확인 (§13.5) — ⚠️ 추측 금지, 반드시 명령으로 검증
 

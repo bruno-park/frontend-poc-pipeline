@@ -19,14 +19,14 @@
 예시:
 - `/code-review` → `plugins/frontend-poc-pipeline/skills/code-review/SKILL.md`
 - `$test-writer` → `plugins/frontend-poc-pipeline/skills/test-writer/SKILL.md`
-- `/pr` 또는 `$pr` → `pull-request-description` 스킬로 해석 (아래 별칭 참고)
+- `/pr` 또는 `$pr` → `create-pull-request` 스킬로 해석 (아래 별칭 참고)
 
 **별칭 (짧은 이름 → 실제 스킬명):**
 
 | 입력 | 스킬명 |
 |------|--------|
-| `/pr`, `$pr` | `pull-request-description` |
-| `/mr`, `$mr` | `pull-request-description` |
+| `/pr`, `$pr` | `create-pull-request` |
+| `/mr`, `$mr` | `create-pull-request` |
 | `/tdd`, `$tdd` | `unit-test-gen` |
 | `/api`, `$api` | `api-integration` |
 | `/ui`, `$ui` | `code-writer` |
@@ -50,7 +50,7 @@
 | `/unit-test-gen`, `단위 테스트 작성`, `유닛 테스트`, `TDD RED`, `테스트 먼저` | `plugins/frontend-poc-pipeline/skills/unit-test-gen/SKILL.md` |
 | `/api-integration`, `API 훅 만들어`, `React Query 훅`, `API 연동` | `plugins/frontend-poc-pipeline/skills/api-integration/SKILL.md` |
 | `/ui-builder` (deprecated → `/code-writer --ui` 사용) | `plugins/frontend-poc-pipeline/skills/ui-builder/SKILL.md` |
-| `/pull-request-description`, `PR 만들어`, `MR 만들어`, `PR 올려`, `MR 올려`, `PR 생성`, `MR 생성`, `pull request`, `merge request` | `plugins/frontend-poc-pipeline/skills/pull-request-description/SKILL.md` |
+| `/create-pull-request`, `PR 만들어`, `MR 만들어`, `PR 올려`, `MR 올려`, `PR 생성`, `MR 생성`, `pull request`, `merge request` | `plugins/frontend-poc-pipeline/skills/create-pull-request/SKILL.md` |
 | `/code-review`, `코드 리뷰`, `PR 리뷰`, `MR 리뷰`, `코드 검토` | `plugins/frontend-poc-pipeline/skills/code-review/SKILL.md` |
 | `/e2e-test-gen`, `E2E 테스트`, `playwright 테스트`, `e2e 작성` | `plugins/frontend-poc-pipeline/skills/e2e-test-gen/SKILL.md` |
 | `/coverage-report`, `커버리지`, `테스트 커버리지`, `coverage` | `plugins/frontend-poc-pipeline/skills/coverage-report/SKILL.md` |
@@ -83,7 +83,7 @@
 [5] code-writer             → TDD GREEN: 구현 (--ui 컴포넌트 / --api → api-integration 위임)
 [6] refactor                → TDD REFACTOR: GREEN 유지하며 정리
 [7] code-review             → 코드 리뷰 (PR 게이트)
-[8] pull-request-description → PR/MR 생성
+[8] create-pull-request     → PR/MR 생성 (사용자 승인 게이트)
 ```
 
 ## Base Rules (스킬 미매칭 시 적용)

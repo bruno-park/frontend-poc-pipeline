@@ -29,7 +29,7 @@ Claude Code plugin marketplace for an AI-driven frontend PoC pipeline:
 [6] refactor                → TDD REFACTOR: GREEN 유지하며 정리
 [7] code-review             → 로컬 diff 또는 PR 코드 리뷰
     coverage-report         → 커버리지 + AC 매핑 리포트
-[8] pull-request-description → PR/MR 설명 생성
+[8] create-pull-request      → PR/MR 설명 생성 + 승인 후 생성
     release-notes           → git log + Jira → 릴리즈 노트
 ```
 
@@ -52,7 +52,7 @@ Claude Code plugin marketplace for an AI-driven frontend PoC pipeline:
 | `refactor` | 6 | TDD REFACTOR: GREEN 유지하며 정리 |
 | `code-review` | 7 | 로컬/PR 코드 리뷰 |
 | `coverage-report` | 7 | 단위/E2E 커버리지 리포트 |
-| `pull-request-description` | 8 | PR/MR 설명 자동 생성 |
+| `create-pull-request` | 8 | PR/MR 설명 자동 생성 + 사용자 승인 후 생성 |
 | `release-notes` | 8 | 릴리즈 노트 생성 |
 | `component-audit` | — | pageComponents 파이프라인 준수 감사 |
 | `conventions` | — | 프로젝트 공통 컨벤션 레퍼런스 |

@@ -19,14 +19,14 @@
 예시:
 - `/code-review` → `plugins/frontend-poc-pipeline/skills/code-review/SKILL.md`
 - `$test-writer` → `plugins/frontend-poc-pipeline/skills/test-writer/SKILL.md`
-- `/pr` 또는 `$pr` → `pull-request-description` 스킬로 해석 (아래 별칭 참고)
+- `/pr` 또는 `$pr` → `create-pull-request` 스킬로 해석 (아래 별칭 참고)
 
 **별칭 (짧은 이름 → 실제 스킬명):**
 
 | 입력 | 스킬명 |
 |------|--------|
-| `/pr`, `$pr` | `pull-request-description` |
-| `/mr`, `$mr` | `pull-request-description` |
+| `/pr`, `$pr` | `create-pull-request` |
+| `/mr`, `$mr` | `create-pull-request` |
 | `/tdd`, `$tdd` | `unit-test-gen` |
 | `/api`, `$api` | `api-integration` |
 | `/ui`, `$ui` | `code-writer` |
@@ -50,7 +50,7 @@
 | `/unit-test-gen`, `단위 테스트 작성`, `유닛 테스트`, `TDD RED`, `테스트 먼저` | `plugins/frontend-poc-pipeline/skills/unit-test-gen/SKILL.md` |
 | `/api-integration`, `API 훅 만들어`, `React Query 훅`, `API 연동` | `plugins/frontend-poc-pipeline/skills/api-integration/SKILL.md` |
 | `/ui-builder` (deprecated → `/code-writer --ui` 사용) | `plugins/frontend-poc-pipeline/skills/ui-builder/SKILL.md` |
-| `/pull-request-description`, `PR 만들어`, `MR 만들어`, `PR 올려`, `MR 올려`, `PR 생성`, `MR 생성`, `pull request`, `merge request` | `plugins/frontend-poc-pipeline/skills/pull-request-description/SKILL.md` |
+| `/create-pull-request`, `PR 만들어`, `MR 만들어`, `PR 올려`, `MR 올려`, `PR 생성`, `MR 생성`, `pull request`, `merge request` | `plugins/frontend-poc-pipeline/skills/create-pull-request/SKILL.md` |
 | `/code-review`, `코드 리뷰`, `PR 리뷰`, `MR 리뷰`, `코드 검토` | `plugins/frontend-poc-pipeline/skills/code-review/SKILL.md` |
 | `/e2e-test-gen`, `E2E 테스트`, `playwright 테스트`, `e2e 작성` | `plugins/frontend-poc-pipeline/skills/e2e-test-gen/SKILL.md` |
 | `/coverage-report`, `커버리지`, `테스트 커버리지`, `coverage` | `plugins/frontend-poc-pipeline/skills/coverage-report/SKILL.md` |
@@ -83,7 +83,7 @@
 [5] code-writer             → TDD GREEN: 구현 (--ui 컴포넌트 / --api → api-integration 위임)
 [6] refactor                → TDD REFACTOR: GREEN 유지하며 정리
 [7] code-review             → 코드 리뷰 (PR 게이트)
-[8] pull-request-description → PR/MR 생성
+[8] create-pull-request     → PR/MR 생성 (사용자 승인 게이트)
 ```
 
 ## Base Rules (스킬 미매칭 시 적용)
@@ -118,3 +118,5 @@
 | 2026-06-05 | Hooks 강화 (WP-8982) — advisory → 강제(enforce) 가능 전환. **헤드라인**: 기존 9개 hook이 모두 존재하지 않는 `CLAUDE_TOOL_INPUT` env를 읽어 항상 no-op(차단·경고 미발동)이던 버그를 발견·수정(공식 docs로 stdin JSON 계약 검증). (1) 공유 `hooks/_lib.sh`(stdin 파싱 jq→python3 fallback, `.fpp-hooks.json`+env 모드 warn/enforce/off+킬스위치, deny/block/advise+remediation, `$TMPDIR` 루프가드, planner 검증 헬퍼). (2) 강제 가능 hook 신규 4종: `bash-safety-guard`(PreToolUse:Bash 위험·난독화 명령 하이브리드 차단, defense-in-depth), `secret-leak-guard`(PreToolUse+PostToolUse 시크릿), `planner-schema-guard`(PostToolUse:Write\|Edit\|MultiEdit planner.md 키워드 검증), `subagent-regate`(SubagentStop planner 재검증). (3) 기존 9종 stdin 마이그레이션 + commit/branch `exit 1`→`exit 2`. (4) `validate-plugin.py`에 `CLAUDE_TOOL_INPUT` 회귀 fail + `_lib.sh` bash -n 추가, `scripts/test-hooks.sh` fixture 하네스 78케이스. (5) README Hooks 섹션 drift 정정, 버전 0.6.0→0.7.0. **B(PostToolUse 포맷/lint/tsc)·C(Stop DS토큰)는 범용 false-positive 위험으로 이번 범위 제외**(사용자 결정). | `plugins/.../hooks/{_lib.sh,bash-safety-guard,secret-leak-guard,planner-schema-guard,subagent-regate,hooks.json,fpp-hooks.example.json, +기존 9종}`, `scripts/{validate-plugin.py,test-hooks.sh,hook-tests/*}`, `README.md`, `CHANGELOG.md`, 버전 2곳 | hook이 advisory로 명세됐으나 실제로는 I/O 계약 오류로 전부 무동작 — "강제 승격" 전에 먼저 "동작"시켜야 했음. 범용 배포(소비 레포마다 도구·DS 상이) 위해 fail-open(품질)/fail-safe(안전) + warn→enforce 토글로 점진 채택 가능하게 설계 |
 | 2026-06-05 | Hooks 하네스 강제력 보강 (linter→harness) — advisory 평가에서 "scaffolding은 좋은데 binding이 약하다"는 지적에 따라 실제 구속 2축 추가. (1) `stop-gate`(Stop) + 위반 ledger(`_lib.sh` fpp_ledger_*): PostToolUse 훅(planner-schema·secret-leak)이 차단 불가라는 한계를 보완 — 위반을 세션 ledger($TMPDIR)에 기록하고 Stop에서 미해결이면 `decision:block`으로 턴 종료 차단(루프가드 N=3). self-heal(재작성 시 clear). (2) `pipeline-order-guard`(PreToolUse:Write): pageComponents 신규 구현 파일 생성 시 planner.md 선존재 + 컴포넌트면 RED 테스트 선존재 강제(기존 파일 편집 비차단, index/types/배럴 면제). (3) hooks.json에 Stop·PreToolUse(Write) 그룹 추가, 예시 설정·README·test-hooks.sh(108케이스) 갱신. 기본 warn 유지(팀이 enforce로 승격). | `plugins/.../hooks/{_lib.sh,stop-gate.sh,pipeline-order-guard.sh,planner-schema-guard.sh,secret-leak-guard.sh,hooks.json,fpp-hooks.example.json}`, `scripts/{test-hooks.sh,hook-tests/harness.cases.sh}`, `README.md`, `CHANGELOG.md` | warn-only advisory는 하네스가 아니라 린터 — 실제 강제는 ① 종착(Stop) 게이트로 PostToolUse 강제를 닫고 ② 파이프라인 순서(planner/TDD)를 PreToolUse에서 막아야 성립. 단 범용 배포 안전 위해 기본 warn, 강제는 팀 opt-in |
 | 2026-06-11 | `e2e-test-gen` Playwright 공식 Test Agents 통합 — (1) 에이전트 감지를 공식 `npx playwright init-agents --loop=claude` 산출 경로(`.claude/agents/playwright-test-{planner,generator,healer}.md`, v1.56+)로 정정, 레거시 `agents/*playwright*.md`는 2순위 fallback (기존엔 비공식 유령 경로만 글롭해 공식 산출물 영구 미감지), (2) 공식 컨벤션 반영: `specs/`(1 spec ↔ 1 test file)·`seed.spec.ts`·`.mcp.json` `playwright-test` MCP 서버 확인, planner는 라이브 앱 탐색이므로 앱 미실행 시 내장 로직 폴백, (3) healer 선별 사용 규칙 — TDD RED("구현 없음" FAIL)에 호출 금지(healer가 `test.skip` 처리해 RED 신호 소실), selector/타이밍 오류에만 위임, (4) 미생성 시 §13.5 정신 opt-in 안내(`.mcp.json` 덮어쓰기 경고 포함), (5) **공식 에이전트 3종 번들**: `agents/playwright-test-{planner,generator,healer}.md` v1.59.1 스냅샷 동봉 — 감지 우선순위 로컬(1) > 번들(2) > 레거시(3), 번들 사용 시 `.mcp.json`에 `playwright-test` entry를 병합 추가(덮어쓰기 금지). 라우팅 키워드 무변경, 버전 0.7.1→0.7.2 | `plugins/.../skills/e2e-test-gen/{SKILL.md,platforms/web.md}`, `plugins/.../agents/playwright-test-{planner,generator,healer}.md`, `.claude-plugin/marketplace.json`, `plugins/.../.claude-plugin/plugin.json`, `CHANGELOG.md` | 스킬이 가정한 에이전트 경로가 실제 공식 산출물과 달라 에이전트 체이닝이 한 번도 동작할 수 없는 상태였음(playwright v1.60 소스 `generateAgents.ts`로 검증). 공식 init-agents 채택 프로젝트에서 즉시 위임 모드가 켜지도록 정합화 + TDD 파이프라인과 healer의 충돌(RED 신호 소실)을 규칙으로 차단 |
+| 2026-06-11 | `test-engineer` → `vitest-test-engineer` 리네임 + 범위 명확화 + `test-writer` E2E를 Playwright 에이전트 위임으로 전환 — (1) 파이프라인 에이전트 이름이 "테스트 전반"으로 읽혀 E2E 오라우팅 위험 → 실제 범위(vitest/jest 단위·통합 + MSW, Phase 4 RED / Phase 7 커버리지)를 이름·본문에 명시, E2E는 범위 밖(`playwright-test-*`/`e2e-test-gen`)으로 못박음, 본문을 스킬 포인터 → 정직 재작성(RED의 GREEN 침범 금지·커버리지 루프는 Phase 7만·러너 비종속 §13·컨텍스트 격리 가치). (2) `test-writer` Phase 3(E2E)를 인라인 직접 작성 → `e2e-test-gen` 경유 Playwright 공식 Test Agents(planner 계획→generator 작성) 위임 **1순위**로 재구성, 인라인 템플릿은 미설치 시 **2순위 폴백** 보존, RED 맥락 healer 호출 금지 규칙 명시. 라우팅 키워드 무변경, 버전 0.7.2→0.7.3 | `plugins/.../agents/vitest-test-engineer.md`(구 `test-engineer.md` 삭제), `plugins/.../skills/test-writer/`, `docs/harness-engineering-2026-05.md`, `.claude-plugin/marketplace.json`, `plugins/.../.claude-plugin/plugin.json`, `CHANGELOG.md` | 고아(어디서도 호출 안 됨)이면서 이름이 범위를 거짓말하던 파이프라인 에이전트를 실제 역할에 정합화 — Playwright(도구 기반 에이전트) vs vitest(스킬 기반) 비대칭을 이름으로 명확화하고, test-writer의 E2E도 도구 기반 Playwright 에이전트로 계획·작성하도록 일원화 |
+| 2026-06-14 | `pull-request-description` → `create-pull-request` 리네임 + 사용자 승인 게이트 추가 — (1) 이름이 "기존 PR description 수정"으로 오해되던 스킬을 실제 동작(새 PR/MR 생성)에 맞춰 동사형 `create-pull-request`로 리네임(디렉토리 git mv + frontmatter `name` + 제목). `/pr`·`/mr`·`$pr`·`$mr` 별칭은 진입점 유지하고 매핑만 repoint. (2) **User Approval Gate(필수)** 신설: description 생성 후 항상 사용자에게 3지선다(① 승인 / ② 수정 / ③ 취소)를 묻고, **명시적 ① 승인 없이는 플랫폼 생성 도구(`gitlab_create_mr`/`bb_post`/`gh pr create`)를 절대 호출 금지** — auto-trigger(`MR 만들어`)여도 무인 자동 생성 차단(② 수정 시 반영 후 재확인 루프). Auto-Trigger Conditions·Execution Steps·Example Usage·frontmatter `description`에 게이트 반영. (3) 동기화: 라우팅 3종(CLAUDE/AGENTS/GEMINI) 별칭·키워드·경로·Pipeline Overview, `.claude/rules/pr-required.md`, `marketplace.json`, `README.md`, `docs/harness-engineering-2026-05.md`, 타 스킬 참조(`hotfix`·`workflow`·`code-reviewer` 에이전트), 버전 0.7.3→0.7.4 | `plugins/.../skills/create-pull-request/`(구 `pull-request-description/`), 라우팅 3종, `.claude/rules/pr-required.md`, `.claude-plugin/marketplace.json`, `plugins/.../.claude-plugin/plugin.json`, `plugins/.../skills/{hotfix,workflow}/`, `plugins/.../agents/code-reviewer.md`, `README.md`, `docs/harness-engineering-2026-05.md`, `CHANGELOG.md` | 스킬 이름이 동작을 거짓말(명사구 → "description 수정"으로 읽힘)하던 것을 동작형으로 정합화 + 사용자가 의도치 않게 PR이 자동 생성되는 위험을 명시적 승인 게이트로 차단(사용자 요구) |

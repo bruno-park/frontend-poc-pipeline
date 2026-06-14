@@ -98,10 +98,10 @@
 
 도메인 파이프라인(설계→테스트→구현→리뷰)을 에이전트화하고, TDD/PR 규율을 훅으로 강제.
 
-- **파이프라인 에이전트 4종 신규**: `architect`(opus), `test-engineer`, `executor`, `code-reviewer`(sonnet).
+- **파이프라인 에이전트 4종 신규**: `architect`(opus), `vitest-test-engineer`(당시 `test-engineer`), `executor`, `code-reviewer`(sonnet).
 - **하네스 OMC 의존성 제거**: 운영 에이전트 3종 + 오케스트레이터를 파일 기반 핸드오프로 교체.
 - **강제 규칙 2종** (`.claude/rules/`):
-  - `pr-required` — PR/MR 생성 시 `pull-request-description` 스킬 필수
+  - `pr-required` — PR/MR 생성 시 `create-pull-request` 스킬 필수
   - `tdd-required` — RED → GREEN → REFACTOR 순서 강제
 - **품질 게이트 훅 9종**:
   - PostToolUse 6종 — planner / test-completeness / code-review / console-log·any / package.json 변경 경고 / e2e
@@ -114,7 +114,7 @@
 ## 누적 결과 (5월 말 기준)
 
 - **훅**: 0개 → 12종 (PRD 게이트 3 + 품질 게이트 9), 모두 플러그인 내부에서 `${CLAUDE_PLUGIN_ROOT}` 기반 동작.
-- **에이전트**: 운영 3종(skill-architect/routing-syncer/marketplace-validator) + 파이프라인 4종(architect/test-engineer/executor/code-reviewer).
+- **에이전트**: 운영 3종(skill-architect/routing-syncer/marketplace-validator) + 파이프라인 4종(architect/vitest-test-engineer/executor/code-reviewer).
 - **검증/CI**: `validate-plugin.py` 26 → 39 checks, GitHub Actions로 push/PR마다 게이팅.
 - **규율**: planner-required(이전부터) + tdd-required + pr-required로 파이프라인 순서 강제.
 - **방향성**: OMC 등 외부 의존을 점진적으로 걷어내고 **파일 기반 핸드오프**로 자립화 → 6월 초 Apidog/Atlassian 인스턴스 비종속화로 이어짐.

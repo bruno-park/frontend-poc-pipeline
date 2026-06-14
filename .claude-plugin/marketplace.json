@@ -5,13 +5,13 @@
   },
   "metadata": {
     "description": "AI-driven frontend PoC pipeline skills for Figma → PRD → TDD → PR workflow",
-    "version": "0.7.2"
+    "version": "0.7.4"
   },
   "plugins": [
     {
       "name": "frontend-poc-pipeline",
       "source": "./plugins/frontend-poc-pipeline",
-      "description": "Full pipeline: figma-jira-prd → branch-from-ticket → feature-planner → test-writer → api-integration → ui-builder → pull-request-description"
+      "description": "Full pipeline: figma-jira-prd → branch-from-ticket → feature-planner → test-writer → api-integration → ui-builder → create-pull-request"
     }
   ]
 }

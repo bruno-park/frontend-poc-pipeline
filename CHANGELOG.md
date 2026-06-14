@@ -3,6 +3,24 @@
 이 파일은 [Keep a Changelog](https://keepachangelog.com/) 형식을 따르고
 프로젝트는 [Semantic Versioning](https://semver.org/)을 사용합니다.
 
+## [0.7.4] - 2026-06-14
+
+### Changed
+- **`pull-request-description` → `create-pull-request` 리네임** — 이름이 명사구라 "이미 있는 PR의 description을 수정한다"로 오해되던 것을, 실제 동작(새 PR/MR 생성)에 맞춰 동작형 이름으로 정정. 디렉토리 `git mv` + frontmatter `name` + 제목 갱신. `/pr`·`/mr`·`$pr`·`$mr` 별칭은 진입점이라 유지하고 매핑만 새 이름으로 repoint. 라우팅 doc 3종(AGENTS/CLAUDE/GEMINI)의 별칭·키워드 트리거·경로·Pipeline Overview, `.claude/rules/pr-required.md`, `marketplace.json` 파이프라인 설명, `README.md`, `docs/harness-engineering-2026-05.md`, 타 스킬 참조(`hotfix`·`workflow`·`code-reviewer` 에이전트) 동기화.
+
+### Added
+- **User Approval Gate (사용자 승인 게이트)** — `create-pull-request`가 description 생성 후 **항상** 사용자에게 선택지를 묻도록 강제. **명시적 승인 없이는 플랫폼 생성 도구(`gitlab_create_mr` / `bb_post` / `gh pr create`)를 절대 호출하지 않음** — auto-trigger(`MR 만들어` 등)로 진입해도 무인 자동 생성 차단. 수정 선택 시 반영 후 재제시·재확인 루프, 취소 시 description만 출력하고 종료. Auto-Trigger Conditions·Execution Steps·Example Usage·frontmatter `description`·`pr-required.md` 강제 사항에 반영.
+- **승인 게이트 + 워크플로 견고화 (CCG 리뷰 반영)** — (1) 게이트를 4지선다로 확장(승인 / 수정 / **초안(Draft)** / 취소) — GitHub `--draft`·GitLab `Draft:` 지원, (2) **생성 가능 여부 선체크**(push·플랫폼·MCP 연결)를 게이트 *전*에 수행해 승인 후 실패하는 헛걸음 제거, (3) **빈 diff 가드**(변경 없으면 중단), (4) **티켓 없음** 시 raw 브랜치명 제목 금지 → 사용자에게 제목 문의/정리, (5) Pre-flight를 Execution Steps에 명시 + 결과를 게이트 화면에 함께 표시(이중 확인 제거) + 범위 일반화(`$TEST_CMD`·`pageComponents/[feature]` 등 미정의 토큰 제거, grep을 `<target>` 기준화 + "매치 없음=통과" 명시), (6) target branch 기본값(`main`) 일원화, (7) 모호한 응답은 승인으로 해석 금지 + 단일 턴 "수정+생성 지시"만 승인으로 간주.
+
+## [0.7.3] - 2026-06-11
+
+### Changed
+- **파이프라인 에이전트 `test-engineer` → `vitest-test-engineer` 리네임 + 범위 명확화** — 이름이 "테스트 전반"으로 읽혀 E2E 작업이 잘못 라우팅될 위험을 제거. 실제 범위(vitest·jest 단위/통합 + MSW, Phase 4 RED / Phase 7 커버리지)를 이름과 본문에 명시. E2E는 범위 밖(Playwright MCP 도구 기반 `playwright-test-*` / `e2e-test-gen` 담당)임을 경계로 못박음. 본문을 "스킬 포인터" 수준에서 정직하게 재작성: RED phase의 GREEN 침범 금지, 커버리지 자율 루프는 Phase 7에서만, 러너 비종속(`conventions` §13), 컨텍스트 격리 위임 대상으로서의 가치 명시.
+- **`test-writer` Phase 3(E2E)를 Playwright 에이전트 위임으로 전환** — 인라인 E2E 로직을 직접 실행하던 것을, `e2e-test-gen` 스킬을 통해 Playwright 공식 Test Agents(`playwright-test-planner`로 계획 → `generator`로 작성)에 **위임하는 것을 1순위**로 재구성. 기존 인라인 템플릿(playwright.config/auth/.env.test/spec)은 에이전트·러너 미설치 시 **2순위 폴백**으로 보존. TDD RED 맥락에서 `playwright-test-healer` 호출 금지 규칙 명시(healer가 `test.skip` 처리해 RED 신호 소실). RED 검증(Step 3)은 어느 경로든 필수 유지.
+
+### Notes
+- 라우팅 doc(AGENTS/CLAUDE/GEMINI) 키워드 테이블은 스킬만 등록하므로 무변경. 에이전트 리네임은 `docs/harness-engineering-2026-05.md` 로스터 참조 2곳만 갱신(당시 이름 주석 포함).
+
 ## [0.7.2] - 2026-06-11
 
 ### Added

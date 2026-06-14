@@ -36,7 +36,7 @@ description: AI 개발 파이프라인 가이드 — 현재 단계를 진단하�
 │  [6] 리팩터       /refactor             코드 정리 + 테스트 유지       │
 │  [7] 커버리지     coverage-report       ≥ 80% 달성                  │
 │  [8] 코드 리뷰    code-review           Critical 이슈 0개            │
-│  [9] PR 작성     pull-request-description  MR/PR 생성               │
+│  [9] PR 작성     create-pull-request       MR/PR 생성               │
 │                                                                     │
 ├─────────────────────────────────────────────────────────────────────┤
 │                  HOTFIX PIPELINE (5 Phases)                         │
@@ -46,7 +46,7 @@ description: AI 개발 파이프라인 가이드 — 현재 단계를 진단하�
 │  [H2] 최소 테스트  /test-writer --unit                               │
 │  [H3] 수정        /code-writer                                       │
 │  [H4] 코드 리뷰   code-review                                        │
-│  [H5] PR 작성     pull-request-description                           │
+│  [H5] PR 작성     create-pull-request                                │
 │                                                                     │
 │  → /hotfix WP-XXXX  으로 전체 fast-path 안내                         │
 │                                                                     │
@@ -331,7 +331,7 @@ $TEST_CMD pageComponents/[feature]
 
 **커맨드**:
 ```bash
-/pull-request-description
+/create-pull-request
 ```
 
 **산출물**: 변경사항 요약 + self-review 체크리스트 + 테스트 플랜이 포함된 MR/PR
@@ -353,7 +353,7 @@ $TEST_CMD pageComponents/[feature]
 [H2] 최소 테스트    → /test-writer --unit (버그 재현 테스트만)
 [H3] 수정          → /code-writer (가장 작은 변경 범위)
 [H4] 코드 리뷰      → /code-review (Critical 이슈만 체크)
-[H5] PR 작성       → /pull-request-description (hotfix 표시)
+[H5] PR 작성       → /create-pull-request (hotfix 표시)
 ```
 
 > 핫픽스는 TDD를 완화하되, 버그 재현 테스트는 반드시 작성 후 수정합니다.
@@ -390,7 +390,7 @@ $TEST_CMD pageComponents/[feature]
 [6] 리팩터      /refactor pageComponents/[f]/planner.md
 [7] 커버리지    /coverage-report WP-XXXX
 [8] 리뷰        /code-review
-[9] PR         /pull-request-description
+[9] PR         /create-pull-request
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  HOTFIX PIPELINE
@@ -440,7 +440,7 @@ $TEST_CMD pageComponents/[feature]
 5. Phase 3+4 병렬: `/api-integration` + `/test-writer --all`
 6. `/code-writer --ui pageComponents/[feature]/planner.md`
 7. 테스트 GREEN 확인 → `/refactor` → `/coverage-report`
-8. `/code-review` 통과 → `/pull-request-description`
+8. `/code-review` 통과 → `/create-pull-request`
 
 **막혔을 때:**
 - 현재 단계 확인: `/workflow WP-XXXX`

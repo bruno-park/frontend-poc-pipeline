@@ -16,7 +16,7 @@ PR 머지 전 코드 품질을 검증한다. 컨벤션 위반, 버그 위험, �
 | Phase | 작업 | 사용 스킬 |
 |-------|------|---------|
 | 8. 코드 리뷰 | diff 분석 + 이슈 분류 + 리포트 | `/code-review` |
-| 9. PR 작성 | 리뷰 PASS 후 PR/MR 생성 | `/pull-request-description` |
+| 9. PR 작성 | 리뷰 PASS 후 PR/MR 생성 | `/create-pull-request` |
 
 ## 체크리스트
 
