@@ -3,6 +3,11 @@
 이 파일은 [Keep a Changelog](https://keepachangelog.com/) 형식을 따르고
 프로젝트는 [Semantic Versioning](https://semver.org/)을 사용합니다.
 
+## [0.7.8] - 2026-06-15
+
+### Fixed
+- **stale 파이프라인 메타데이터 정정 (ui-builder cleanup)** — (1) `marketplace.json` 플러그인 설명이 deprecated된 `ui-builder`를 활성 파이프라인 단계로 표기하고 `code-writer`·`refactor`·`code-review`를 누락하던 것을, 실제 파이프라인(`... → test-writer + api-integration → code-writer → refactor → code-review → create-pull-request`)으로 정정. (2) `plugin.json` 설명의 `Screen Plan`(feature-planner 옛 이름) → `Feature Plan`, `Review` 단계 추가. `ui-builder` 묘비 스킬(`/ui-builder` → `code-writer --ui` 리다이렉트)과 라우팅 행은 호환을 위해 유지. 버전 0.7.7→0.7.8
+
 ## [0.7.7] - 2026-06-15
 
 ### Changed
