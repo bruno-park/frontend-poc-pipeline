@@ -20,6 +20,31 @@ description: planner.md hooks 기반으로 React Query 훅과 TypeScript 타입�
 
 ---
 
+## 컨벤션 기준 (SSOT)
+
+> 훅·타입·네이밍은 `conventions` 스킬을 단일 기준으로 따릅니다. 이 스킬은 규칙을 복제하지 않고 참조합니다 (복제본은 SSOT와 어긋나 drift를 만듭니다).
+> - **Two-Layer Hook Pattern** (conventions §7) — Layer 1 `use[Feature]Query`(순수 fetch + 타입), Layer 2 `use[Feature]`(비즈니스 로직 + mutation). 목록 페이지는 항상 2-layer.
+> - **Naming** (conventions §2, §7) — `I` prefix interface, `~Type` suffix type, API path 상수 `UPPER_CASE`(예: `FEATURE_API_PATH`), 훅 `use[Feature]Query`(Layer 1) / `use[Feature]`(Layer 2).
+> - **Type/State 위치** (conventions §7, §12) — API request/response 타입은 **React Query 훅 파일에 co-locate**. 별도 `apis/service/`·`apis/model/`·전역 `types/`·`constants/` 폴더 **생성 금지**.
+
+## 프로젝트 구조 감지 (Structure Detection)
+
+레포마다 데이터 레이어 구조가 다릅니다. **임의로 가정하지 말고 실제 구조를 먼저 감지**합니다 (테스트 러너 감지 §13과 같은 마켓플레이스 비종속 원칙).
+
+```bash
+Glob: apis/model/*.ts, apis/service/*.ts        # 레이어드 구조 신호
+Glob: pageComponents/**/hooks/*.hook.ts         # co-location 구조 신호
+```
+
+| 감지 결과 | 채택 구조 | 타입/모델/상수 위치 |
+|---|---|---|
+| `apis/model/`·`apis/service/` 존재 (레거시 레이어드) | **레이어드 모드** — 그 프로젝트 구조를 그대로 따름 | 기존 `apis/model/*.ts`, `utils/variables.ts` 확장 |
+| 위 없음 + `pageComponents/**/hooks/` 사용 (= conventions 표준) | **co-location 모드 (기본)** | 훅 파일에 co-locate (§7/§12) |
+
+> 신규/그린필드 프로젝트는 **co-location 모드가 기본**입니다 (conventions §12 준수). 레이어드 모드는 이미 `apis/model`을 쓰는 레거시 레포에서만 채택합니다.
+
+---
+
 ## 타입 소스 판별 (Spec Availability)
 
 **전제: 프론트 작업 시점에 백엔드 API(OpenAPI 스펙)는 아직 안 나와 있는 게 흔합니다.** FE/BE 병렬 개발에선 스펙이 늦게 확정됩니다. 그래서 이 스킬은 두 모드로 동작하고 — **스펙이 없으면 잠정 모드가 기본 경로**입니다. 스펙을 못 구하는 것은 예외(fallback)가 아니라 정상적인 1급 경로입니다.
@@ -73,6 +98,26 @@ OpenAPI 문서(OpenAPI 3.x / Swagger 2.0, JSON/YAML) **하나**에서 정확한 
 
 **CRITICAL: planner.md를 먼저 읽고 변경 경로를 결정합니다.**
 
+### Step 0: 모드 확정 및 선언 (mental anchor)
+
+본격 작업 전에 두 직교 축을 확정하고 **반드시 한 줄로 선언**한다. 긴 문서를 진행하며 모드를 잊는 drift를 막는 앵커다.
+
+- **STRUCTURE_MODE** ← [프로젝트 구조 감지](#프로젝트-구조-감지-structure-detection): `레이어드` | `co-location`(기본)
+- **SPEC_MODE** ← [타입 소스 판별](#타입-소스-판별-spec-availability): `스펙` | `잠정`(기본)
+
+```
+선언 예: [STRUCTURE_MODE: co-location | SPEC_MODE: 잠정]
+```
+
+두 축의 조합별 동작:
+
+| STRUCTURE \ SPEC | 잠정 (스펙 없음·기본) | 스펙 (OpenAPI) |
+|---|---|---|
+| **co-location (기본)** | 훅 파일에 잠정 타입 co-locate + MSW 목 | 훅 파일에 스펙 기반 정확 타입 co-locate |
+| **레이어드 (레거시)** | `apis/model`·`utils/variables`에 잠정 타입 확장 | `apis/model` 등에 스펙 기반 정확 타입 확장 |
+
+> STRUCTURE_MODE는 **파일을 어디에 두는가**(Path 분기), SPEC_MODE는 **타입을 무엇에서 뽑는가**(타입 소스)를 결정한다 — 서로 독립이다.
+
 ### Step 1: planner.md에서 Source 태그 수집
 
 planner.md의 아래 섹션들을 파싱하여 각 항목의 `Source` 태그를 수집합니다:
@@ -80,25 +125,31 @@ planner.md의 아래 섹션들을 파싱하여 각 항목의 `Source` 태그를 
 | 확인 섹션 | 확인 대상 | 태그 |
 |---|---|---|
 | **Hook Layer 테이블** | 각 훅의 Source 컬럼 | `REUSE` / `NEW` |
-| **File Structure** | `apis/model/*.ts` | `MODIFY` / 없음 |
-| **File Structure** | `apis/service/*.ts` | `MODIFY` / `NEW` / 없음 |
-| **File Structure** | `utils/variables.ts` | `MODIFY` / 없음 |
+| **File Structure** | `apis/model/*.ts` *(레이어드 모드만)* | `MODIFY` / 없음 |
+| **File Structure** | `apis/service/*.ts` *(레이어드 모드만)* | `MODIFY` / `NEW` / 없음 |
+| **File Structure** | `utils/variables.ts` *(레이어드 모드만)* | `MODIFY` / 없음 |
 | **Component Details** | 각 컴포넌트의 Source | `REUSE` / `MODIFY` / `NEW` |
+
+> `apis/model`·`apis/service`·`utils/variables` 행은 **레이어드 모드**(구조 감지 결과)에서만 해당합니다. **co-location 모드**에서는 데이터 타입/enum/상수가 모두 **해당 feature의 훅 파일**에 있으므로, MODIFY 대상도 `pageComponents/[feature]/hooks/*.hook.ts`입니다.
 
 ### Step 2: 경로 결정
 
 수집된 태그를 기반으로 변경 경로를 판별합니다:
+
+> **"데이터 레이어 MODIFY" 정의** (구조 모드별):
+> - **레이어드 모드**: `apis/model/*.ts` 또는 `utils/variables.ts`가 MODIFY
+> - **co-location 모드 (기본)**: 해당 feature의 훅 파일(`pageComponents/[feature]/hooks/*.hook.ts`) 또는 `[section].constants.ts`가 MODIFY (= 타입/enum/상수가 추가되는데 새 엔드포인트는 없음)
 
 ```
 IF  Hook Layer에 NEW가 하나라도 있음
     → Path A: 새 API 훅 생성 (Phase A1~A6 실행)
 
 IF  Hook Layer가 전부 REUSE
-AND (apis/model이 MODIFY OR utils/variables.ts가 MODIFY)
+AND 데이터 레이어 MODIFY (위 정의 — 모드별 대상)
     → Path B: Data Schema Extension (Phase B1~B7 실행)
 
 IF  Hook Layer에 NEW + REUSE 혼합
-AND apis/model이 MODIFY
+AND 데이터 레이어 MODIFY (위 정의 — 모드별 대상)
     → Path C: A + B 조합 실행
 ```
 
@@ -312,18 +363,31 @@ API 연동 목록:
 
 ## Path B: Data Schema Extension
 
-> Hook Layer가 전부 `REUSE`이고, `apis/model/` 또는 `utils/variables.ts`가 `MODIFY`일 때 실행합니다.
-> 기존 API 엔드포인트는 동일하지만 새 데이터 타입/enum/모델이 추가되는 케이스입니다.
+> Hook Layer가 전부 `REUSE`이고, 새 데이터 타입/enum/모델이 추가되는 케이스입니다 (엔드포인트는 동일).
+>
+> **확장 대상 위치는 [프로젝트 구조 감지](#프로젝트-구조-감지-structure-detection) 결과를 따릅니다:**
+> - **레이어드 모드** — `apis/model/*.ts`·`utils/variables.ts`가 `MODIFY`일 때. 아래 B2~B5의 `apis/model`/`utils/variables` 예시를 그대로 적용.
+> - **co-location 모드 (기본)** — 같은 타입/enum/상수가 **해당 feature 훅 파일**(또는 §11 규칙상 `[section].constants.ts`)에 있을 때. B2~B5를 `pageComponents/[feature]/hooks/*.hook.ts` 대상으로 적용하고, 전역 `apis/model`·`utils/variables` 파일을 새로 만들지 않습니다 (conventions §12).
+>
+> 아래 절차의 파일 경로는 레이어드 모드 예시입니다. co-location 모드면 위 매핑대로 훅/feature 파일로 치환하세요.
 
-### Phase B1: 변경 대상 파일 목록 수집
+### Phase B1: 변경 대상 파일 목록 수집 + 역할변수 매핑
 
-planner.md의 File Structure에서 `MODIFY` 태그된 파일들을 수집합니다:
+먼저 STRUCTURE_MODE에 따라 **대상 파일 역할변수를 1회 확정**한다. B2~B5는 이 역할변수를 가리킨다 (각 단계의 인라인 주석은 이 매핑의 재확인용):
+
+| 역할변수 | 레이어드 모드 | co-location 모드 (기본) |
+|---|---|---|
+| `ENUM_FILE` | `utils/variables.ts` | enum이 선언된 `[section].constants.ts` 또는 훅 파일 |
+| `MODEL_FILE` | `apis/model/*.ts` | 타입이 co-locate된 `pageComponents/[feature]/hooks/*.hook.ts` |
+| `MAPPING_FILE` | variable 파일 | 매핑이 선언된 feature `[section].constants.ts` |
+
+planner.md의 File Structure에서 `MODIFY` 태그된 파일들을 수집합니다 (아래는 레이어드 모드 예시):
 
 ```
-예시:
-  apis/model/adProductModel.ts  ← MODIFY (레이아웃 인터페이스 추가)
-  utils/variables.ts            ← MODIFY (enum 추가)
-  ad-configuration.variable.ts  ← MODIFY (매핑 추가)
+예시 (레이어드 모드):
+  apis/model/adProductModel.ts  ← MODIFY (레이아웃 인터페이스 추가) = MODEL_FILE
+  utils/variables.ts            ← MODIFY (enum 추가)                = ENUM_FILE
+  ad-configuration.variable.ts  ← MODIFY (매핑 추가)                = MAPPING_FILE
 ```
 
 각 파일에 대해:
@@ -353,7 +417,7 @@ export enum AdProductType {
 ```
 
 **절차**:
-1. `utils/variables.ts` Read
+1. enum 정의 파일 Read — **레이어드**: `utils/variables.ts` / **co-location**: 해당 enum이 선언된 `pageComponents/[feature]/**/[section].constants.ts` 또는 훅 파일
 2. planner.md에서 추가할 enum 값 추출
 3. 기존 enum 마지막 항목 뒤에 새 값 추가 (Edit)
 4. 관련 enum이 여러 개인 경우 (예: `CreativeSpecType`, `CreativeType`) 모두 처리
@@ -371,7 +435,7 @@ planner.md에서 `MODIFY`로 표시된 모델 파일의 변경 사항을 적용�
 | 기존 type union 확장 | 타입에 새 variant 추가 | `ICreativeLayout<IVideoFeedLayout>` |
 
 **절차**:
-1. 대상 모델 파일 Read (`apis/model/*.ts`)
+1. 타입 정의 파일 Read — **레이어드**: `apis/model/*.ts` / **co-location**: 타입이 co-locate된 `pageComponents/[feature]/hooks/*.hook.ts` (없으면 새 전역 `apis/model` 만들지 말고 훅 파일에 추가, §12)
 2. planner.md에서 추가할 인터페이스/타입 추출
 3. 기존 관련 인터페이스 근처에 새 인터페이스 추가 (Edit)
 4. 기존 union type에 새 타입 추가 (Edit)
@@ -415,7 +479,7 @@ export const defaultLayoutModel = (creativeSpecType) => {
 ```
 
 **절차**:
-1. 모델 팩토리 함수 Read
+1. 모델 팩토리 함수 Read (**레이어드**: `apis/model` 내 / **co-location**: 해당 로직이 있는 훅·feature util 파일 내)
 2. planner.md에서 새 타입의 기본값 추출
 3. 기존 switch/if-else의 `default` 앞에 새 case 추가 (Edit)
 4. 기존 패턴 참고 (`Pattern Reference`가 있으면 해당 파일 Read하여 구조 복사)
@@ -443,7 +507,7 @@ export const landingUrlFieldsMapping = {
 ```
 
 **절차**:
-1. 대상 variable 파일 Read
+1. 매핑 객체 파일 Read (**레이어드**: variable 파일 / **co-location**: 매핑이 선언된 feature `[section].constants.ts`)
 2. planner.md의 PRD Field → Component Mapping 테이블 참조
 3. 기존 매핑 패턴과 동일한 구조로 새 키-값 추가 (Edit)
 4. 관련 매핑 객체가 여러 개인 경우 (예: `defaultLandingUrlValueMapping`, `helpButtonField`) 모두 처리
@@ -478,6 +542,8 @@ REUSE 훅이 새 타입을 정상 처리하는지 검증합니다:
 새 훅 생성: 없음 (기존 훅 재사용)
 ```
 
+> 위 예시는 **레이어드 모드** 경로다. **co-location 모드**에서는 변경 파일을 `pageComponents/[feature]/hooks/*.hook.ts`·`[section].constants.ts`로 표기한다.
+
 ---
 
 ## Path C: 혼합 (A + B)
@@ -493,7 +559,7 @@ REUSE 훅이 새 타입을 정상 처리하는지 검증합니다:
 
 ## 공통 주의사항
 
-- API 타입은 훅 파일에 co-locate (별도 `types/` 폴더 생성 금지) — Path A에만 해당
+- **co-location 모드(기본)**: API 타입은 훅 파일에 co-locate, 별도 `types/`·`apis/model`·`apis/service` 폴더 생성 금지 (conventions §7/§12). **레이어드 모드**: 이미 존재하는 `apis/model` 구조를 따름 — [구조 감지](#프로젝트-구조-감지-structure-detection) 참고
 - API path 상수는 export (wrapper hook과 테스트에서 재사용)
 - 목록 페이지는 항상 2-layer (Query Hook + Wrapper Hook)
 - 단순 셀렉트/드롭다운 옵션 조회는 Query Hook만으로 충분

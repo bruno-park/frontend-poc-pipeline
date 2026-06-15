@@ -3,6 +3,15 @@
 이 파일은 [Keep a Changelog](https://keepachangelog.com/) 형식을 따르고
 프로젝트는 [Semantic Versioning](https://semver.org/)을 사용합니다.
 
+## [0.7.6] - 2026-06-15
+
+### Changed
+- **`api-integration` conventions SSOT 앵커 + 프로젝트 구조 감지 도입** — (1) **conventions 미참조(0회) 해소**: §7 Two-Layer Hook·§2 Naming·§7/§12 타입 위치를 가리키는 "컨벤션 기준(SSOT)" 포인터 블록 신설. 규칙 복제 대신 참조. (2) **Path B가 conventions §12를 위반하던 모순 해소**: Path B(Data Schema Extension)가 §12 DON'T가 금지하는 `apis/model/`·`apis/service/`·전역 `utils/variables.ts`를 무조건 대상으로 삼던 것을, **"프로젝트 구조 감지"**(테스트 러너 감지 §13과 같은 비종속 패턴)로 전환 — `apis/model` 존재 시 **레이어드 모드**(레거시 구조 그대로), 없으면 **co-location 모드(기본)**로 훅 파일에 co-locate. Phase 0 Step 1 테이블·Path B 인트로·공통 주의사항을 두 모드 분기로 갱신, 내부 모순("co-locate 권장 ↔ Path B가 apis/model 편집") 정정.
+
+### Fixed
+- **독립 검증(verifier) 반영 4건** — (Critical) Step 2 경로 결정 로직이 `apis/model이 MODIFY`만 조건으로 삼아 **co-location 모드에선 Path B/C 진입 불가**하던 데드락을, "데이터 레이어 MODIFY"를 구조 모드별로 정의해 해소. (High) B2~B5 절차에 레이어드 경로(`utils/variables.ts`·`apis/model/*.ts`)가 하드코딩돼 인트로를 놓치면 co-location 프로젝트에서 §12 위반 파일을 생성하던 것을, 각 Phase에 모드별 대상 인라인 명시. (Medium) SSOT 포인터가 conventions에 없는 `~ApiPath`/`use{PathName}` 규칙을 발명해 가리키던 것을 실제 표기(`UPPER_CASE` `FEATURE_API_PATH`, `use[Feature]Query`/`use[Feature]`)로 정정. (Low) B7 결과 출력 예시에 co-location 모드 경로 표기 안내 추가.
+- **CCG(Gemini) 검토 반영 — 실행 신뢰성 보강** — (1) Phase 0에 **Step 0 모드 확정·선언**(`[STRUCTURE_MODE | SPEC_MODE]` 한 줄 선언) 신설 — 긴 문서 진행 중 모드 망각(drift) 방지 앵커, (2) 구조×스펙 **2×2 모드 매트릭스**로 두 직교 축 동작을 한눈에, (3) Phase B1에 **역할변수 매핑**(`ENUM_FILE`/`MODEL_FILE`/`MAPPING_FILE`) 도입 — B2~B5 인라인 모드주석의 재확인 기준을 1곳에 고정. (Codex advisor는 이번 실행에서 산출물 없이 종료 — Gemini + 직전 verifier로 교차검증 충당.)
+
 ## [0.7.5] - 2026-06-15
 
 ### Changed
