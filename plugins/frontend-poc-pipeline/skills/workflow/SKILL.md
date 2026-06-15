@@ -35,7 +35,7 @@ description: AI 개발 파이프라인 가이드 — 현재 단계를 진단하�
 │  [5] 구현 GREEN   /code-writer --ui     테스트 GREEN 목표            │
 │  [6] 리팩터       /refactor             코드 정리 + 테스트 유지       │
 │  [7] 커버리지     coverage-report       ≥ 80% 달성                  │
-│  [8] 코드 리뷰    code-review           Critical 이슈 0개            │
+│  [8] 코드 리뷰    code-review           Critical/High 0개           │
 │  [9] PR 작성     create-pull-request       MR/PR 생성               │
 │                                                                     │
 ├─────────────────────────────────────────────────────────────────────┤

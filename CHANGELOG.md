@@ -3,6 +3,19 @@
 이 파일은 [Keep a Changelog](https://keepachangelog.com/) 형식을 따르고
 프로젝트는 [Semantic Versioning](https://semver.org/)을 사용합니다.
 
+## [0.7.5] - 2026-06-15
+
+### Changed
+- **`code-review` 스킬 SSOT 정합화 + Mode B host 일반화 (CCG 리뷰 반영)** — (1) **인라인 Conventions 블록(약 75줄) 삭제 → `conventions/SKILL.md`(SSOT) 필수 읽기로 대체.** 복제본이 이미 drift: 인라인은 컴포넌트 파일명을 kebab-case로 적었으나 SSOT는 PascalCase → 리뷰가 PascalCase 파일을 위반으로 오지적하던 버그 제거. (2) **Mode A/Mode B 공통 "Analysis Core" 분리** — 분석(무엇을 볼지)과 실행(local diff vs 원격 API)을 분리, 중복되던 Performance 섹션 2개를 1개로 통합. (3) **심각도 단일화** — Mode A(Critical/High/Medium/Low) ↔ Mode B(Critical/Warning/Minor) 불일치를 Critical/High/Medium/Low 단일 표로 통일(에이전트와도 일치). (4) **Mode B Bitbucket 전용 → "원격 PR/MR 리뷰" provider 추상화** — host 감지(URL > git remote > MCP)로 GitLab(`gitlab_create_mr_discussion`/`gitlab_add_mr_note`)·Bitbucket(`bb_post`)·GitHub(`gh`) 어댑터 + report-only fallback. 트리거의 "MR 리뷰"가 실제 GitLab 경로와 정합. (338→251줄)
+- **`code-reviewer` 에이전트를 thin gate로 축소** — 체크리스트·심각도 정의 중복을 제거하고 `/code-review` 위임 + PASS/BLOCK 판정만 담당하도록 재작성. **Phase 9(PR/MR 작성) 소유권 제거** — PR/MR 생성은 승인 게이트를 가진 `create-pull-request` 전담임을 명시하고 PASS 시 next step으로 안내만 하도록 변경. 입력 host도 GitLab/Bitbucket/GitHub 일반화.
+
+### Fixed
+- **`workflow/SKILL.md` Phase 8 게이트 기준 오기재 정정** (독립 검증 반영) — 파이프라인 다이어그램(라인 38)이 "Critical 이슈 0개"로 표기돼 같은 파일의 Quality Gate 표(Critical/High 0개)·`code-review` 스킬과 어긋나던 것을 "Critical/High 0개"로 통일. High 이슈를 머지해도 된다고 오해할 위험 제거.
+- **`code-review` B-1 host 감지 주석 정정** — "create-pull-request와 동일한 감지 로직"이라는 과장 주장을 실제에 맞춰 "같은 감지 우선순위(URL > git remote > MCP/CLI)를 따른다"로 수정.
+
+### Notes
+- 라우팅 doc(AGENTS/CLAUDE/GEMINI) 키워드·별칭 테이블은 스킬 리네임/추가/삭제가 아니므로 무변경(기존 "MR 리뷰" 트리거 유지).
+
 ## [0.7.4] - 2026-06-14
 
 ### Changed
