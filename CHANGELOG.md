@@ -3,6 +3,12 @@
 이 파일은 [Keep a Changelog](https://keepachangelog.com/) 형식을 따르고
 프로젝트는 [Semantic Versioning](https://semver.org/)을 사용합니다.
 
+## [0.7.7] - 2026-06-15
+
+### Changed
+- **E2E 테스트 생성에 "동작 검증"(action · request · response · post-action)을 1급 원칙으로 도입** (Slack 피드백 반영 — #C04CWNPFFKN, 김동윤: "ui도 중요하지만 action, request, response 관련 동작이 더 중요"). 기존 E2E 템플릿이 UI 가시성(`toBeVisible`·`tbody tr` count·`toHaveURL`)만 단언해 요청 파라미터·요청 본문·응답 처리·호출 후 상태 변화 버그를 놓치던 것을 보강. (1) `e2e-test-gen/SKILL.md`·`platforms/web.md`에 **"동작 검증 원칙" 섹션 신설** — action→request(method/URL/query/body)→response(status)→post-action(목록 refetch·toast·redirect·optimistic·에러 롤백) 4계층 표 + 나쁜 예/좋은 예 + mutation `Promise.all` 패턴 + `page.route`로 4xx/5xx 주입한 에러 동작 시나리오. (2) **planner 위임 우선순위·generator 위임 규칙**에 request/response/post-action 단언 요구 추가. (3) **내장 폴백 템플릿** 3곳(e2e-test-gen SKILL/web.md + test-writer Phase 3)을 UI-only에서 GET 응답 검증·search query param 검증·POST body→201→refetch+토스트·에러 응답 동작 포함으로 교체. (4) `test-writer` Phase 3 위임 노트 + 합격 기준 표에 "E2E 동작 검증" 행 추가(`e2e-test-gen` SSOT 섹션 포인팅). playwright-test-* 번들 에이전트(공식 스냅샷)는 무수정, 라우팅 키워드 무변경.
+- **E2E 테스트 제목 컨벤션 `기능명 (라우트)` 도입** (같은 Slack 스레드 — "path도 적혀있으면 좋겠다" → 박준 "title(url) - content로 넣겠다"; 첨부 대시보드 스크린샷은 화면 이름만 노출). e2e 대시보드가 Playwright JSON `title`을 표시하므로 **최상위 `describe` 제목에 라우트(URL)** 를 넣어 `기능명 (라우트) › 시나리오` = `title(url) - content`로 어떤 화면을 검증하는지 노출. 라우트는 `const ROUTE`(planner.md URL State 기준)에 두고 `page.goto`와 제목이 공유해 drift 방지(파일 경로 `file:line`은 JSON에 이미 있어 대시보드 책임 → 제목엔 라우트). `e2e-test-gen/{SKILL.md, platforms/web.md}`에 "테스트 제목 컨벤션" 섹션 신설 + generator 위임 규칙 + 내장 템플릿 3곳(describe·beforeEach goto·RBAC goto)을 ROUTE 공유로 교체, `test-writer` Phase 3 위임 노트 추가.
+
 ## [0.7.6] - 2026-06-15
 
 ### Changed

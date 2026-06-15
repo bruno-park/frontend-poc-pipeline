@@ -234,6 +234,10 @@ describe('ComponentName', () => {
 
 > **E2E는 `e2e-test-gen` 스킬에 위임한다 — Playwright 공식 Test Agents로 계획·작성한다.** (TDD RED 검증은 어느 경로든 필수)
 
+> **동작 검증 우선 (action · request · response · post-action):** E2E는 UI 가시성(`toBeVisible`, `tbody tr` count, `toHaveURL`)만 단언하면 약하다. 각 시나리오는 ① action이 트리거한 **request**(method·URL·query·body) ② **response**(status) ③ **호출 후 동작**(목록 refetch·toast·redirect·optimistic·에러 롤백)을 함께 단언한다. 특히 mutation(생성/수정/삭제)은 request body→response→post-action까지 필수. 상세 패턴·코드는 `e2e-test-gen` 스킬의 "동작 검증 원칙" 섹션을 따른다.
+
+> **테스트 제목 컨벤션 (e2e 대시보드 path 노출):** 최상위 `describe` 제목을 **`기능명 (라우트)`** 로 작성한다 — 라우트(URL)를 `const ROUTE = '...'`(planner.md URL State 기준)에 두고 `page.goto`와 제목이 공유한다. e2e 대시보드가 `title(url) - content` 형태로 어떤 화면을 검증하는지 보여준다 (파일 경로 `file:line`은 JSON에 이미 있어 대시보드가 별도 노출 → 제목엔 라우트). 상세는 `e2e-test-gen` "테스트 제목 컨벤션" 섹션.
+
 ### 위임 (1순위): Playwright 에이전트로 계획·작성
 
 `e2e-test-gen` 스킬을 읽고 그 감지·위임 로직을 따른다:
@@ -338,22 +342,43 @@ Phase 1 매핑 테이블의 E2E 시나리오 기준으로 작성.
 import { test, expect } from '@playwright/test'
 import { loginAs } from '../helpers/auth'
 
-test.describe('[Feature명] E2E', () => {
+const ROUTE = '/[route]'   // planner.md URL State 기준 — describe 제목·goto 공유 (대시보드 title(url))
+
+test.describe(`[Feature명] (${ROUTE})`, () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'master')
-    await page.goto('/[route]')
+    await page.goto(ROUTE)
     await page.waitForResponse('**/api/v1/[endpoint]**')
   })
 
-  // AC 항목별 시나리오
-  test('[AC-1] 목록이 정상 렌더링된다', async ({ page }) => {
+  // AC 항목별 시나리오 — UI + 동작(request/response/post-action) 함께 검증
+  test('[AC-1] 목록 GET 응답(200) 후 행이 렌더링된다', async ({ page }) => {
+    const res = await page.waitForResponse('**/api/v1/[endpoint]**')
+    expect(res.status()).toBe(200)
     await expect(page.locator('tbody tr')).not.toHaveCount(0)
   })
 
-  test('[AC-2] 검색 시 URL query param이 업데이트된다', async ({ page }) => {
+  test('[AC-2] 검색 시 search query param으로 목록 API를 재호출한다', async ({ page }) => {
+    const reqP = page.waitForRequest(r => r.url().includes('/api/v1/[endpoint]') && r.method() === 'GET')
     await page.fill('[placeholder*="검색"]', '테스트')
-    await page.waitForTimeout(500)
-    await expect(page).toHaveURL(/search=테스트/)
+    const req = await reqP
+    expect(new URL(req.url()).searchParams.get('search')).toBe('테스트') // request 검증
+    await expect(page).toHaveURL(/search=테스트/)                          // URL 동기화도 함께
+  })
+
+  test('[AC-3] 생성 시 POST 본문 → 201 → 목록 refetch + 토스트', async ({ page }) => {
+    await page.getByRole('button', { name: '생성' }).click()
+    await page.getByLabel('[필드 라벨]').fill('새 항목')
+    const [createReq, createRes, refetchRes] = await Promise.all([
+      page.waitForRequest(r => r.url().includes('/api/v1/[endpoint]') && r.method() === 'POST'),
+      page.waitForResponse(r => r.request().method() === 'POST' && r.url().includes('/api/v1/[endpoint]')),
+      page.waitForResponse(r => r.request().method() === 'GET' && r.url().includes('/api/v1/[endpoint]')), // refetch
+      page.getByRole('button', { name: '저장' }).click(),
+    ])
+    expect(createReq.postDataJSON()).toMatchObject({ name: '새 항목' }) // request body
+    expect(createRes.status()).toBe(201)                                // response
+    expect(refetchRes.status()).toBe(200)                               // post-action: refetch
+    await expect(page.getByText('생성되었습니다')).toBeVisible()          // post-action: toast
   })
 })
 
@@ -365,9 +390,9 @@ const roleMatrix = [
 ]
 
 for (const { role, canCreate } of roleMatrix) {
-  test(`[RBAC] ${role} - 생성 버튼 ${canCreate ? '표시' : '숨김'}`, async ({ page }) => {
+  test(`[RBAC] (${ROUTE}) ${role} - 생성 버튼 ${canCreate ? '표시' : '숨김'}`, async ({ page }) => {
     await loginAs(page, role)
-    await page.goto('/[route]')
+    await page.goto(ROUTE)
     const createBtn = page.getByRole('button', { name: '생성' })
     if (canCreate) {
       await expect(createBtn).toBeVisible()
@@ -451,6 +476,7 @@ Tests: 9 failed, 0 passed
 | RBAC | master/finance/CS 역할별 시나리오 포함 | Phase 1 매핑 테이블 |
 | 셀렉터 규칙 | **프로젝트 기존 테스트 패턴 준수** (data-testid 사용 여부도 레포 관례를 확인 후 결정 — "없음/금지" 단정 금지) | 기존 `*.test.*` 확인 |
 | **E2E 커버리지** (`--all`/`--e2e`) | 러너 설치 시 **E2E 작성 필수**. 스킵은 "미설치"일 때만 가능하며 **확인 명령 출력을 리포트에 첨부**. "적합도 낮음/시드 불가" 등 주관적 스킵 금지 | Phase 3 Step 1-1 출력 |
+| **E2E 동작 검증** (`--all`/`--e2e`) | UI 단언만으로 끝내지 않음 — action→**request**(method/URL/query/body)→**response**(status)→**post-action**(refetch·toast·redirect·에러 롤백) 단언 포함. mutation은 request body+응답+호출 후 동작 필수 | Phase 3 내장 템플릿 / 위임 규칙 |
 
 ---
 

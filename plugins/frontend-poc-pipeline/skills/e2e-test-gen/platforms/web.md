@@ -16,6 +16,57 @@
 
 ---
 
+## 동작 검증 원칙 (action · request · response · post-action) — UI보다 우선
+
+> **왜:** E2E의 가치는 "요소가 보이는가"가 아니라 "사용자 action이 올바른 API를 호출하고, 응답에 따라 화면이 올바르게 반응하는가"에 있다. UI 가시성만 단언하면(`toBeVisible`, `tbody tr` count, `toHaveURL`) 요청 파라미터·요청 본문·응답 처리·호출 후 상태 변화 버그를 놓친다. **각 시나리오는 가능한 한 4계층을 함께 단언한다. 특히 mutation은 request body → response → post-action까지 필수.**
+
+| 계층 | 단언 대상 | Playwright API |
+|------|----------|----------------|
+| **action** | 클릭/입력/제출 | `click` / `fill` / `getByRole` |
+| **request** | method·URL·query·body | `waitForRequest`, `req.method()`, `new URL(req.url()).searchParams`, `req.postDataJSON()` |
+| **response** | status·데이터 | `waitForResponse`, `res.status()`, `await res.json()` |
+| **post-action** | 목록 refetch·toast·redirect·URL·optimistic·에러 롤백 | `waitForResponse`(refetch GET) + UI 단언 |
+
+```typescript
+// 나쁜 예 (UI만): URL만 보고 API 호출 검증 안 함
+await page.getByPlaceholder(/검색/).fill('테스트'); await expect(page).toHaveURL(/search=테스트/)
+
+// 좋은 예 (action → request)
+const reqP = page.waitForRequest(r => r.url().includes('/api/v1/partners') && r.method() === 'GET')
+await page.getByPlaceholder(/검색/).fill('테스트')
+expect(new URL((await reqP).url()).searchParams.get('search')).toBe('테스트')
+
+// mutation: request body → response → post-action 전부
+const [req, res, refetch] = await Promise.all([
+  page.waitForRequest(r => r.url().includes('/api/v1/partners') && r.method() === 'POST'),
+  page.waitForResponse(r => r.request().method() === 'POST' && r.url().includes('/api/v1/partners')),
+  page.waitForResponse(r => r.request().method() === 'GET' && r.url().includes('/api/v1/partners')), // refetch
+  page.getByRole('button', { name: '저장' }).click(),
+])
+expect(req.postDataJSON()).toMatchObject({ name: '새 파트너' }); expect(res.status()).toBe(201); expect(refetch.status()).toBe(200)
+await expect(page.getByText('생성되었습니다')).toBeVisible()
+```
+**에러 응답 동작도 1급:** `page.route(...)`로 4xx/5xx 주입 → "에러 메시지 + 목록 불변/롤백" 단언 (BE 미배포여도 작성 가능).
+
+---
+
+## 테스트 제목 컨벤션 — `기능명 (라우트)` (e2e 대시보드 path 노출)
+
+> **왜:** e2e 대시보드는 업로드된 Playwright JSON의 `title`을 표시한다(현재는 화면 이름만 노출). **최상위 `describe` 제목에 라우트(URL)** 를 넣으면 `기능명 (라우트) › 시나리오` = **`title(url) - content`** 로 어떤 화면을 검증하는지 보인다. repo 파일 경로 `file:line`은 JSON에 이미 있어 대시보드가 별도 노출하므로 **제목엔 파일 경로가 아니라 라우트**를 쓴다.
+
+- 라우트는 `planner.md`의 URL State에서 가져와 **상수 1곳**(`const ROUTE = '...'`)에 두고 `goto`·describe 제목이 공유(drift 방지). 동적 세그먼트는 `/.../:id` 패턴.
+
+```typescript
+const ROUTE = '/media/ads/partner-ad-management'   // planner.md URL State 기준
+test.describe(`파트너 광고 관리 (${ROUTE})`, () => {
+  test.beforeEach(async ({ page }) => { await loginAs(page, 'master'); await page.goto(ROUTE) })
+  test('검색 시 search param으로 목록 API 재호출', async ({ page }) => { /* content */ })
+})
+// → 대시보드: 파트너 광고 관리 (/media/ads/partner-ad-management) - 검색 시 search param으로 목록 API 재호출
+```
+
+---
+
 ## Phase 0: E2E 러너 설치 게이트 (§13.5)
 
 > **Playwright는 자동 설치하지 않는다.** 미설치는 정상 폴백 — "단위 테스트만으로 진행" 안내 후 종료.
@@ -68,22 +119,25 @@ e2e/helpers/auth.ts   → 없으면 Phase 2에서 생성
 Jira AC:
 [AC 항목 목록]
 
+각 시나리오는 UI 가시성만이 아니라 **action → request → response → post-action**을 함께 검증하도록 계획한다 (위 "동작 검증 원칙").
+
 테스트 우선순위:
 1. 인증/권한 (로그인, RBAC)
-2. 핵심 CRUD 플로우
-3. URL 상태 동기화 (해당 시)
-4. 예외 케이스 (빈 상태, 에러, 권한 없음)
+2. 핵심 CRUD 플로우 — **request 본문/파라미터 + response + 호출 후 동작까지**
+3. URL 상태 동기화 (검색·필터·정렬이 올바른 query param으로 API를 호출하는지)
+4. 예외 케이스 (빈 상태, 에러 응답 시 동작, 권한 없음)
 ```
 
 ### 에이전트 없을 시 (내장 로직)
 
-planner.md에서 직접 E2E 시나리오 추출:
+planner.md에서 직접 E2E 시나리오 추출 (기대결과는 UI뿐 아니라 request/response/post-action 포함):
 
-| 시나리오 | 역할 | 사전조건 | 단계 | 기대결과 |
+| 시나리오 | 역할 | 사전조건 | 단계 | 기대결과 (동작 검증) |
 |---------|------|---------|------|---------|
-| 목록 로드 | master | 로그인 | 페이지 이동 | 테이블 렌더링 |
-| 검색 필터 | master | 로그인 | 검색어 입력 | URL 업데이트 |
-| 생성 CRUD | master | 로그인 | 버튼 클릭→폼→저장 | 목록 갱신 |
+| 목록 로드 | master | 로그인 | 페이지 이동 | GET 목록 API(200) + 테이블 렌더링 |
+| 검색 필터 | master | 로그인 | 검색어 입력 | `search` query param으로 GET 재호출 + URL 업데이트 |
+| 생성 CRUD | master | 로그인 | 버튼→폼→저장 | POST(올바른 body)→201→목록 refetch+토스트 |
+| 생성 실패 | master | 로그인 | 저장(4xx mock) | 에러 메시지 노출 + 목록 불변 |
 | 권한 차단 | finance | 로그인 | 버튼 확인 | 버튼 미표시 |
 
 ---
@@ -106,6 +160,8 @@ specs/[feature].md 테스트 계획을 기반으로 E2E 테스트 코드를 생�
 - auth helper: e2e/helpers/auth.ts 사용
 - data-testid 셀렉터 사용 금지
 - 역할별 테스트 포함 (master/finance/CS)
+- **UI 단언만으로 끝내지 말 것.** action이 트리거한 ① request(method·URL·query·body) ② response(status) ③ 호출 후 동작(refetch·toast·redirect·optimistic·에러 롤백)을 `waitForRequest`/`waitForResponse`/`page.route`로 단언 (위 "동작 검증 원칙" 4계층)
+- **최상위 `describe` 제목 = `기능명 (라우트)`** — 라우트를 `const ROUTE`에 두고 goto와 공유 → 대시보드 `title(url) - content` (위 "테스트 제목 컨벤션")
 ```
 
 ### 에이전트 없을 시 (내장 로직)
@@ -117,22 +173,55 @@ specs/[feature].md 테스트 계획을 기반으로 E2E 테스트 코드를 생�
 import { test, expect } from '@playwright/test'
 import { loginAs } from '../helpers/auth'
 
-test.describe('[Feature명] - [AC 항목]', () => {
+const ROUTE = '/[route]'   // planner.md URL State 기준 — describe 제목·goto 공유 (대시보드 title(url))
+
+test.describe(`[Feature명] (${ROUTE})`, () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'master')
-    await page.goto('http://localhost:3001/[route]')
+    await page.goto(ROUTE)
     await page.waitForResponse('**/api/v1/[endpoint]**')
   })
 
-  // AC 항목별 테스트
-  test('[AC-1] 목록이 정상 렌더링된다', async ({ page }) => {
+  // AC 항목별 테스트 — UI + 동작(request/response/post-action) 함께 검증
+  test('[AC-1] 목록 GET 응답(200) 후 행이 렌더링된다', async ({ page }) => {
+    const res = await page.waitForResponse('**/api/v1/[endpoint]**')
+    expect(res.status()).toBe(200)
     await expect(page.locator('tbody tr')).not.toHaveCount(0)
   })
 
-  test('[AC-2] 검색 시 URL query param이 업데이트된다', async ({ page }) => {
+  test('[AC-2] 검색 시 search query param으로 목록 API를 재호출한다', async ({ page }) => {
+    const reqP = page.waitForRequest(r => r.url().includes('/api/v1/[endpoint]') && r.method() === 'GET')
     await page.fill('[placeholder*="검색"]', '테스트')
-    await page.waitForTimeout(500) // debounce
-    await expect(page).toHaveURL(/search=테스트/)
+    const req = await reqP
+    expect(new URL(req.url()).searchParams.get('search')).toBe('테스트') // request 검증
+    await expect(page).toHaveURL(/search=테스트/)                          // URL 동기화도 함께
+  })
+
+  test('[AC-3] 생성 시 POST 본문 전송 → 201 → 목록 refetch + 토스트', async ({ page }) => {
+    await page.getByRole('button', { name: '생성' }).click()
+    await page.getByLabel('[필드 라벨]').fill('새 항목')
+    const [createReq, createRes, refetchRes] = await Promise.all([
+      page.waitForRequest(r => r.url().includes('/api/v1/[endpoint]') && r.method() === 'POST'),
+      page.waitForResponse(r => r.request().method() === 'POST' && r.url().includes('/api/v1/[endpoint]')),
+      page.waitForResponse(r => r.request().method() === 'GET' && r.url().includes('/api/v1/[endpoint]')), // refetch
+      page.getByRole('button', { name: '저장' }).click(),
+    ])
+    expect(createReq.postDataJSON()).toMatchObject({ name: '새 항목' }) // request body
+    expect(createRes.status()).toBe(201)                                // response
+    expect(refetchRes.status()).toBe(200)                               // post-action: refetch
+    await expect(page.getByText('생성되었습니다')).toBeVisible()          // post-action: toast
+  })
+
+  test('[AC-3-err] 생성 실패(4xx) 시 에러 메시지가 뜨고 목록은 그대로다', async ({ page }) => {
+    await page.route('**/api/v1/[endpoint]', route =>
+      route.request().method() === 'POST'
+        ? route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ message: '중복된 이름' }) })
+        : route.continue(),
+    )
+    await page.getByRole('button', { name: '생성' }).click()
+    await page.getByLabel('[필드 라벨]').fill('중복 항목')
+    await page.getByRole('button', { name: '저장' }).click()
+    await expect(page.getByText('중복된 이름')).toBeVisible()
   })
 })
 
@@ -144,9 +233,9 @@ const roleMatrix = [
 ]
 
 for (const { role, canCreate } of roleMatrix) {
-  test(`[RBAC] ${role} 역할 - 생성 버튼 ${canCreate ? '표시' : '숨김'}`, async ({ page }) => {
+  test(`[RBAC] (${ROUTE}) ${role} 역할 - 생성 버튼 ${canCreate ? '표시' : '숨김'}`, async ({ page }) => {
     await loginAs(page, role)
-    await page.goto('http://localhost:3001/[route]')
+    await page.goto(ROUTE)
     const createBtn = page.getByRole('button', { name: '생성' })
     if (canCreate) {
       await expect(createBtn).toBeVisible()
