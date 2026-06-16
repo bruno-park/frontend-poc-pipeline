@@ -3,6 +3,11 @@
 이 파일은 [Keep a Changelog](https://keepachangelog.com/) 형식을 따르고
 프로젝트는 [Semantic Versioning](https://semver.org/)을 사용합니다.
 
+## [0.7.10] - 2026-06-15
+
+### Changed
+- **`code-writer` SKILL.md 500줄 초과 → `references/` 분리 (skill-architect 가이드 준수)** — Phase 3에 인라인돼 있던 `useUrlQuery.ts` canonical 구현 전체(~290줄 TypeScript)를 `references/useUrlQuery-implementation.md`로 추출하고, 본문에는 "없으면 reference 구현을 그대로 복사" 포인터만 남김. SKILL.md 688→393줄(한도 내 진입). 동작·지시 내용 변화 없음(순수 구조 분리) — 거대 코드 블록이 본문을 차지해 다른 Phase 지시가 묻히던 가독성 문제 해소.
+
 ## [0.7.9] - 2026-06-15
 
 ### Fixed
