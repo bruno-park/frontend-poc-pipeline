@@ -3,6 +3,11 @@
 이 파일은 [Keep a Changelog](https://keepachangelog.com/) 형식을 따르고
 프로젝트는 [Semantic Versioning](https://semver.org/)을 사용합니다.
 
+## [0.7.9] - 2026-06-15
+
+### Fixed
+- **`unit-test-gen` 디스패처 플랫폼 라벨 러너 비종속화** — 플랫폼 가이드 표의 `Web (React + Vitest)` 라벨이 Vitest를 고정 표기해, 이미 러너 비종속(Jest/Vitest, `conventions` §13)으로 전환된 `platforms/web.md` 실제 동작과 어긋나던 잔존 stale 라벨을 `Web (React, Jest/Vitest)`로 정정. (점검 결과 `test-writer`·`platforms/web.md`의 §13 앵커는 이미 정합 — drift 없음.)
+
 ## [0.7.8] - 2026-06-15
 
 ### Fixed

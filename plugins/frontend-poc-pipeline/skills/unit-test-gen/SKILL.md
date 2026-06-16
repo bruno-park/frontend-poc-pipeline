@@ -25,7 +25,7 @@ description: planner.md와 Jira AC를 기반으로 단위 테스트를 TDD 방�
 
 | 플랫폼 | 파일 | 상태 |
 |--------|------|------|
-| Web (React + Vitest) | [platforms/web.md](platforms/web.md) | ✅ 완료 |
+| Web (React, Jest/Vitest) | [platforms/web.md](platforms/web.md) | ✅ 완료 |
 | iOS | [platforms/ios.md](platforms/ios.md) | 📝 TODO |
 | Android | [platforms/android.md](platforms/android.md) | 📝 TODO |
 | Web SDK | [platforms/web-sdk.md](platforms/web-sdk.md) | 📝 TODO |
